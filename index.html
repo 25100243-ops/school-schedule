@@ -3,18 +3,42 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>授業変更・小テスト管理</title>
+  <title>授業変更・小テスト・提出物管理</title>
 
-  <!-- PWA / Mobile Setup -->
-  <meta name="theme-color" content="#4f46e5">
+  <!-- PWA & Theme Colors -->
+  <meta name="theme-color" content="#1e293b">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <meta name="apple-mobile-web-app-title" content="授業変更">
-  <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%234f46e5'/><text x='50' y='65' font-size='50' text-anchor='middle' fill='white'>📅</text></svg>">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="授業・課題">
+  <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%231e293b'/><text x='50' y='65' font-size='50' text-anchor='middle' fill='%232a9d8f'>📚</text></svg>">
   <link rel="manifest" id="manifest-placeholder">
 
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            teal: {
+              750: '#115e59',
+              850: '#0f4c47',
+              900: '#134e4a',
+              950: '#042f2e',
+            },
+            sage: {
+              50: '#f4f7f5',
+              100: '#e3ebe6',
+              200: '#c7d7ce',
+              500: '#52796f',
+              600: '#354f52',
+              700: '#2f3e46',
+            }
+          }
+        }
+      }
+    }
+  </script>
 
   <!-- Font Awesome -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -26,178 +50,276 @@
     body {
       -webkit-tap-highlight-color: transparent;
       user-select: none;
+      background-color: #f1f5f9;
     }
     input, textarea, select {
       user-select: auto;
     }
+    /* スクロールバーのカスタマイズ */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
   </style>
 </head>
-<body class="bg-slate-100 text-slate-800 antialiased min-h-screen pb-24">
+<body class="text-slate-700 antialiased min-h-screen pb-24 bg-slate-100 flex flex-col">
 
-  <!-- ヘッダー -->
-  <header class="bg-indigo-600 text-white shadow-md sticky top-0 z-20">
-    <div class="max-w-md mx-auto px-4 py-3 flex justify-between items-center">
-      <div class="flex items-center space-x-2">
-        <i class="fa-solid fa-calendar-check text-xl"></i>
-        <h1 class="font-bold text-lg">授業変更・小テスト</h1>
+  <!-- ヘッダー (マルチデバイス対応) -->
+  <header class="bg-slate-800 text-slate-100 shadow-md sticky top-0 z-20 border-b border-slate-700">
+    <div class="max-w-6xl mx-auto px-4 py-3 flex justify-between items-center">
+      <div class="flex items-center space-x-3">
+        <div class="w-9 h-9 rounded-xl bg-teal-600/30 border border-teal-500/30 flex items-center justify-center text-teal-300 text-lg">
+          <i class="fa-solid fa-book-bookmark"></i>
+        </div>
+        <div>
+          <h1 class="font-bold text-base md:text-lg leading-tight tracking-wide text-slate-100">授業変更・課題ノート</h1>
+          <p class="text-[10px] md:text-xs text-slate-400 font-medium">小テスト・授業変更・提出物</p>
+        </div>
       </div>
-      <div class="flex items-center space-x-2">
-        <!-- 表示切替ボタン -->
-        <div class="bg-indigo-700/60 p-1 rounded-lg flex text-xs">
-          <button id="viewListBtn" onclick="toggleView('list')" class="px-2.5 py-1 rounded-md bg-white text-indigo-700 font-bold shadow-sm transition">
-            リスト
+
+      <div class="flex items-center space-x-2 sm:space-x-3">
+        <!-- ビュー切り替えボタン -->
+        <div class="bg-slate-900/80 p-1 rounded-xl flex text-xs border border-slate-700">
+          <button id="viewListBtn" onclick="toggleView('list')" class="px-3 py-1.5 rounded-lg bg-teal-700 text-white font-bold shadow-xs transition-all">
+            <i class="fa-solid fa-list-ul sm:mr-1"></i><span class="hidden sm:inline">リスト</span>
           </button>
-          <button id="viewCalBtn" onclick="toggleView('calendar')" class="px-2.5 py-1 rounded-md text-indigo-100 font-medium transition">
-            カレンダー
+          <button id="viewCalBtn" onclick="toggleView('calendar')" class="px-3 py-1.5 rounded-lg text-slate-300 hover:text-white font-medium transition-all">
+            <i class="fa-regular fa-calendar-days sm:mr-1"></i><span class="hidden sm:inline">カレンダー</span>
+          </button>
+          <button id="viewBothBtn" onclick="toggleView('both')" class="hidden md:block px-3 py-1.5 rounded-lg text-slate-300 hover:text-white font-medium transition-all">
+            <i class="fa-solid fa-columns sm:mr-1"></i><span>両方</span>
           </button>
         </div>
+
         <!-- 設定ボタン -->
-        <button onclick="openSettings()" class="text-indigo-200 hover:text-white p-1">
-          <i class="fa-solid fa-gear text-lg"></i>
+        <button onclick="openSettings()" class="text-slate-300 hover:text-white bg-slate-700/60 hover:bg-slate-700 p-2 sm:px-3 sm:py-2 rounded-xl transition-colors flex items-center space-x-1.5">
+          <i class="fa-solid fa-gear text-sm"></i>
+          <span class="hidden sm:inline text-xs font-bold">教科設定</span>
         </button>
       </div>
     </div>
   </header>
 
-  <main class="max-w-md mx-auto px-4 pt-4">
+  <!-- メインコンテンツ -->
+  <main class="max-w-6xl mx-auto px-4 pt-4 sm:pt-6 flex-1 w-full">
 
-    <!-- 絞り込みタブ -->
-    <div class="flex bg-white p-1 rounded-xl shadow-sm border border-slate-200 mb-4 text-xs font-bold text-slate-500">
-      <button id="tab-all" onclick="setFilter('all')" class="flex-1 py-2 rounded-lg bg-indigo-50 text-indigo-600 transition">すべて</button>
-      <button id="tab-quiz" onclick="setFilter('小テスト')" class="flex-1 py-2 rounded-lg hover:text-slate-800 transition">小テストのみ</button>
-      <button id="tab-change" onclick="setFilter('授業変更')" class="flex-1 py-2 rounded-lg hover:text-slate-800 transition">授業変更のみ</button>
+    <!-- 絞り込みタブ & アクション -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+      <div class="grid grid-cols-4 bg-white p-1 rounded-2xl shadow-xs border border-slate-200/80 text-xs font-bold text-slate-500 gap-1 w-full sm:w-auto sm:min-w-[380px]">
+        <button id="tab-all" onclick="setFilter('all')" class="py-2 px-3 rounded-xl bg-teal-700 text-white transition-all shadow-xs">すべて</button>
+        <button id="tab-quiz" onclick="setFilter('小テスト')" class="py-2 px-3 rounded-xl hover:text-slate-800 transition-all">小テスト</button>
+        <button id="tab-change" onclick="setFilter('授業変更')" class="py-2 px-3 rounded-xl hover:text-slate-800 transition-all">授業変更</button>
+        <button id="tab-task" onclick="setFilter('提出物')" class="py-2 px-3 rounded-xl hover:text-slate-800 transition-all">提出物</button>
+      </div>
+
+      <!-- PC用 新規作成ボタン -->
+      <button onclick="openModal()" class="hidden sm:flex items-center justify-center space-x-2 bg-teal-700 hover:bg-teal-800 text-white px-5 py-2.5 rounded-2xl font-bold text-xs shadow-sm transition-all active:scale-[0.98]">
+        <i class="fa-solid fa-plus text-sm"></i>
+        <span>新しい予定を追加</span>
+      </button>
     </div>
 
-    <!-- ステータス通知 -->
+    <!-- ステータスバナー -->
     <div id="statusBanner" class="hidden mb-4 p-2.5 text-xs rounded-xl flex justify-between items-center border">
       <span id="statusText">接続確認中...</span>
       <button onclick="initSupabase()" class="font-bold underline">再接続</button>
     </div>
 
-    <!-- 1. リスト表示エリア -->
-    <div id="listView" class="space-y-3">
-      <div id="scheduleList" class="space-y-3"></div>
-      <div id="emptyList" class="hidden py-12 text-center text-slate-400">
-        <i class="fa-regular fa-calendar-xmark text-4xl mb-2"></i>
-        <p class="text-xs">予定はありません</p>
-      </div>
-    </div>
+    <!-- レスポンシブ メインレイアウトグリッド -->
+    <div id="mainGrid" class="grid grid-cols-1 md:grid-cols-12 gap-6 items-start">
 
-    <!-- 2. カレンダー表示エリア -->
-    <div id="calendarView" class="hidden bg-white rounded-2xl p-4 shadow-sm border border-slate-200">
-      <div class="flex justify-between items-center mb-4">
-        <button onclick="changeMonth(-1)" class="w-8 h-8 rounded-lg bg-slate-100 text-slate-600 flex items-center justify-center">
-          <i class="fa-solid fa-chevron-left text-xs"></i>
-        </button>
-        <h2 id="calMonthTitle" class="font-bold text-sm text-slate-700"></h2>
-        <button onclick="changeMonth(1)" class="w-8 h-8 rounded-lg bg-slate-100 text-slate-600 flex items-center justify-center">
-          <i class="fa-solid fa-chevron-right text-xs"></i>
-        </button>
+      <!-- 1. リスト表示エリア -->
+      <div id="listView" class="md:col-span-12 space-y-3 transition-all duration-300">
+        <div id="scheduleList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3"></div>
+        <div id="emptyList" class="hidden py-16 text-center text-slate-400 bg-white rounded-2xl border border-slate-200/60 p-6 shadow-xs">
+          <i class="fa-regular fa-folder-open text-4xl mb-3 text-slate-300"></i>
+          <p class="text-xs font-bold text-slate-500">該当する予定はありません</p>
+          <p class="text-[11px] text-slate-400 mt-1">「＋」ボタンから追加できます</p>
+        </div>
       </div>
 
-      <div class="grid grid-cols-7 gap-1 text-center text-[11px] font-bold text-slate-400 mb-1">
-        <span class="text-red-400">日</span><span>月</span><span>火</span><span>水</span><span>木</span><span>金</span><span class="text-blue-400">土</span>
+      <!-- 2. カレンダー表示エリア -->
+      <div id="calendarView" class="hidden md:col-span-12 bg-white rounded-2xl p-4 sm:p-6 shadow-xs border border-slate-200/80 transition-all duration-300">
+        <div class="flex justify-between items-center mb-4 pb-3 border-b border-slate-100">
+          <button onclick="changeMonth(-1)" class="w-8 h-8 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center transition-colors">
+            <i class="fa-solid fa-chevron-left text-xs"></i>
+          </button>
+          <h2 id="calMonthTitle" class="font-bold text-sm sm:text-base text-slate-800 tracking-wide"></h2>
+          <button onclick="changeMonth(1)" class="w-8 h-8 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center transition-colors">
+            <i class="fa-solid fa-chevron-right text-xs"></i>
+          </button>
+        </div>
+
+        <div class="grid grid-cols-7 gap-1 sm:gap-2 text-center text-[11px] sm:text-xs font-bold text-slate-400 mb-1">
+          <span class="text-rose-400">日</span><span>月</span><span>火</span><span>水</span><span>木</span><span>金</span><span class="text-teal-600">土</span>
+        </div>
+        <div id="calendarGrid" class="grid grid-cols-7 gap-1 sm:gap-2"></div>
       </div>
-      <div id="calendarGrid" class="grid grid-cols-7 gap-1"></div>
+
     </div>
 
   </main>
 
-  <!-- 追加ボタン (FAB) -->
-  <button onclick="openModal()" class="fixed bottom-6 right-6 w-14 h-14 bg-indigo-600 text-white rounded-full shadow-lg flex items-center justify-center text-xl hover:bg-indigo-700 transition active:scale-95 z-30">
+  <!-- スマホ用 FAB (画面右下) -->
+  <button onclick="openModal()" class="sm:hidden fixed bottom-6 right-6 w-14 h-14 bg-teal-700 hover:bg-teal-800 text-white rounded-2xl shadow-lg flex items-center justify-center text-xl transition-all active:scale-95 z-30 border border-teal-600/30">
     <i class="fa-solid fa-plus"></i>
   </button>
 
-  <!-- 登録・編集モーダル -->
-  <div id="formModal" class="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center hidden">
-    <div class="bg-white w-full max-w-md rounded-t-2xl sm:rounded-2xl p-5 shadow-xl space-y-4 max-h-[90vh] overflow-y-auto">
-      <div class="flex justify-between items-center border-b pb-3">
-        <h3 id="modalTitle" class="font-bold text-slate-800">予定を追加</h3>
-        <button onclick="closeModal()" class="text-slate-400 text-lg"><i class="fa-solid fa-xmark"></i></button>
+  <!-- 日別予定一覧モーダル (カレンダーセル選択時に表示) -->
+  <div id="dayScheduleModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-end sm:items-center justify-center hidden p-0 sm:p-4 transition-opacity">
+    <div class="bg-white w-full max-w-lg rounded-t-3xl sm:rounded-2xl p-5 sm:p-6 shadow-2xl space-y-4 max-h-[85vh] flex flex-col border border-slate-200">
+      
+      <!-- モーダルヘッダー -->
+      <div class="flex justify-between items-center border-b border-slate-100 pb-3 shrink-0">
+        <div class="flex items-center space-x-2">
+          <div class="w-2.5 h-5 bg-teal-700 rounded-full"></div>
+          <h3 id="dayModalTitle" class="font-bold text-slate-800 text-base sm:text-lg">○月○日(曜日)の予定</h3>
+        </div>
+        <button onclick="closeDayModal()" class="w-8 h-8 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-xl flex items-center justify-center transition-colors">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
       </div>
 
-      <form id="scheduleForm" onsubmit="saveSchedule(event)" class="space-y-3">
+      <!-- 予定一覧コンテナ (スクロール可能) -->
+      <div id="dayScheduleList" class="space-y-3 overflow-y-auto flex-1 pr-1">
+        <!-- JSで動的生成 -->
+      </div>
+
+      <!-- アクションフッター -->
+      <div class="pt-2 border-t border-slate-100 shrink-0">
+        <button onclick="addNewFromDayModal()" class="w-full py-3 bg-teal-700 hover:bg-teal-800 text-white font-bold text-xs sm:text-sm rounded-xl shadow-xs transition-all active:scale-[0.99] flex items-center justify-center space-x-2">
+          <i class="fa-solid fa-plus"></i>
+          <span>この日に予定を追加する</span>
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- 登録・編集モーダル -->
+  <div id="formModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-end sm:items-center justify-center hidden p-0 sm:p-4 transition-opacity">
+    <div class="bg-white w-full max-w-md rounded-t-3xl sm:rounded-2xl p-5 sm:p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto border border-slate-200">
+      <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+        <div class="flex items-center space-x-2">
+          <div class="w-2 h-4 bg-teal-600 rounded-full"></div>
+          <h3 id="modalTitle" class="font-bold text-slate-800 text-base">予定を追加</h3>
+        </div>
+        <button onclick="closeModal()" class="w-8 h-8 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-xl flex items-center justify-center transition-colors">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+
+      <form id="scheduleForm" onsubmit="saveSchedule(event)" class="space-y-4">
         <input type="hidden" id="editId" value="">
 
-        <!-- タイプ -->
+        <!-- タイプ選択 -->
         <div>
-          <label class="block text-xs font-bold text-slate-600 mb-1">タイプ</label>
-          <div class="grid grid-cols-2 gap-2 text-xs font-bold">
+          <label class="block text-xs font-bold text-slate-600 mb-1.5">タイプ</label>
+          <div class="grid grid-cols-3 gap-2 text-xs font-bold">
             <label class="cursor-pointer">
               <input type="radio" name="formType" value="小テスト" checked onchange="toggleTypeUI()" class="peer sr-only">
-              <div class="py-2 text-center rounded-xl border border-slate-200 peer-checked:bg-amber-50 peer-checked:border-amber-400 peer-checked:text-amber-700">📝 小テスト</div>
+              <div class="py-2.5 px-1 text-center rounded-xl border border-slate-200 text-slate-600 peer-checked:bg-amber-50 peer-checked:border-amber-400 peer-checked:text-amber-800 transition-all flex flex-col items-center justify-center space-y-1">
+                <span>📝 小テスト</span>
+              </div>
             </label>
             <label class="cursor-pointer">
               <input type="radio" name="formType" value="授業変更" onchange="toggleTypeUI()" class="peer sr-only">
-              <div class="py-2 text-center rounded-xl border border-slate-200 peer-checked:bg-indigo-50 peer-checked:border-indigo-400 peer-checked:text-indigo-700">🔄 授業変更</div>
+              <div class="py-2.5 px-1 text-center rounded-xl border border-slate-200 text-slate-600 peer-checked:bg-teal-50 peer-checked:border-teal-500 peer-checked:text-teal-800 transition-all flex flex-col items-center justify-center space-y-1">
+                <span>🔄 授業変更</span>
+              </div>
+            </label>
+            <label class="cursor-pointer">
+              <input type="radio" name="formType" value="提出物" onchange="toggleTypeUI()" class="peer sr-only">
+              <div class="py-2.5 px-1 text-center rounded-xl border border-slate-200 text-slate-600 peer-checked:bg-rose-50 peer-checked:border-rose-400 peer-checked:text-rose-800 transition-all flex flex-col items-center justify-center space-y-1">
+                <span>📤 提出物</span>
+              </div>
             </label>
           </div>
         </div>
 
         <!-- 日付 -->
         <div>
-          <label class="block text-xs font-bold text-slate-600 mb-1">日付</label>
-          <input type="date" id="formDate" required class="w-full px-3 py-2 border rounded-xl text-sm">
+          <label class="block text-xs font-bold text-slate-600 mb-1">日付 / 提出期限</label>
+          <input type="date" id="formDate" required class="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-600/30 focus:border-teal-600 bg-slate-50">
         </div>
 
-        <!-- 小テスト用 教科選択 -->
+        <!-- 単一教科選択 (小テスト / 提出物用) -->
         <div id="singleSubjectArea">
           <label class="block text-xs font-bold text-slate-600 mb-1">科目名</label>
-          <select id="formSubject" class="w-full px-3 py-2 border rounded-xl text-sm bg-white"></select>
+          <select id="formSubject" class="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm bg-slate-50 focus:outline-none focus:ring-2 focus:ring-teal-600/30 focus:border-teal-600"></select>
         </div>
 
-        <!-- 授業変更用 教科選択 (変更前 -> 変更後) -->
+        <!-- 授業変更用 教科選択 -->
         <div id="doubleSubjectArea" class="hidden">
           <label class="block text-xs font-bold text-slate-600 mb-1">教科の変更</label>
           <div class="flex items-center space-x-2">
             <div class="flex-1">
-              <span class="text-[10px] text-slate-400 block">変更前</span>
-              <select id="formSubjectFrom" class="w-full px-2 py-2 border rounded-xl text-xs bg-white"></select>
+              <span class="text-[10px] text-slate-400 block mb-0.5">変更前</span>
+              <select id="formSubjectFrom" class="w-full px-2.5 py-2 border border-slate-200 rounded-xl text-xs bg-slate-50 focus:outline-none focus:ring-2 focus:ring-teal-600/30 focus:border-teal-600"></select>
             </div>
-            <i class="fa-solid fa-arrow-right text-slate-400 mt-3 text-xs"></i>
+            <i class="fa-solid fa-arrow-right text-slate-400 mt-4 text-xs"></i>
             <div class="flex-1">
-              <span class="text-[10px] text-slate-400 block">変更後</span>
-              <select id="formSubjectTo" class="w-full px-2 py-2 border rounded-xl text-xs bg-white"></select>
+              <span class="text-[10px] text-slate-400 block mb-0.5">変更後</span>
+              <select id="formSubjectTo" class="w-full px-2.5 py-2 border border-slate-200 rounded-xl text-xs bg-slate-50 focus:outline-none focus:ring-2 focus:ring-teal-600/30 focus:border-teal-600"></select>
             </div>
           </div>
         </div>
 
         <!-- 内容 -->
         <div>
-          <label class="block text-xs font-bold text-slate-600 mb-1">内容 / 範囲</label>
-          <textarea id="formContent" rows="3" required placeholder="例: P.10〜15の単語テスト" class="w-full px-3 py-2 border rounded-xl text-sm"></textarea>
+          <label id="contentLabel" class="block text-xs font-bold text-slate-600 mb-1">内容 / 範囲</label>
+          <textarea id="formContent" rows="3" required placeholder="例: P.10〜15の単語テスト / ワークブック提出" class="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm bg-slate-50 focus:outline-none focus:ring-2 focus:ring-teal-600/30 focus:border-teal-600"></textarea>
         </div>
 
         <!-- 登録者名 -->
         <div>
           <label class="block text-xs font-bold text-slate-600 mb-1">登録者名</label>
-          <input type="text" id="formAuthor" required placeholder="例: 山田" class="w-full px-3 py-2 border rounded-xl text-sm">
+          <input type="text" id="formAuthor" required placeholder="例: 山田" class="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm bg-slate-50 focus:outline-none focus:ring-2 focus:ring-teal-600/30 focus:border-teal-600">
         </div>
 
-        <button type="submit" class="w-full py-3 bg-indigo-600 text-white font-bold text-sm rounded-xl shadow-md hover:bg-indigo-700 transition">
+        <button type="submit" class="w-full py-3 bg-teal-700 hover:bg-teal-800 text-white font-bold text-sm rounded-xl shadow-md transition-all active:scale-[0.99] mt-2">
           保存する
         </button>
       </form>
     </div>
   </div>
 
-  <!-- 設定モーダル (Supabase設定 & 教科管理) -->
-  <div id="settingsModal" class="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
-    <div class="bg-white w-full max-w-sm rounded-2xl p-5 shadow-xl space-y-4 max-h-[90vh] overflow-y-auto">
-      <div class="flex justify-between items-center border-b pb-2">
-        <h3 class="font-bold text-slate-800 text-sm">設定</h3>
-        <button onclick="closeSettings()" class="text-slate-400"><i class="fa-solid fa-xmark"></i></button>
+  <!-- 設定モーダル (並び替え & 追加・削除対応) -->
+  <div id="settingsModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center hidden p-4">
+    <div class="bg-white w-full max-w-md rounded-2xl p-5 sm:p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto border border-slate-200">
+      <div class="flex justify-between items-center border-b border-slate-100 pb-2.5">
+        <h3 class="font-bold text-slate-800 text-sm sm:text-base">アプリ設定 & 教科管理</h3>
+        <button onclick="closeSettings()" class="w-8 h-8 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg flex items-center justify-center">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
       </div>
 
-      <!-- 1. 教科管理セクション -->
-      <div class="space-y-2">
-        <label class="block text-xs font-bold text-slate-700">📚 教科の管理</label>
-        <div id="subjectTagList" class="flex flex-wrap gap-1.5 p-2 bg-slate-50 border border-slate-200 rounded-xl max-h-36 overflow-y-auto">
-          <!-- 教科タグがJSで動的に表示されます -->
+      <!-- 教科の並び替え & 管理セクション -->
+      <div class="space-y-3">
+        <div class="flex justify-between items-center">
+          <label class="block text-xs font-bold text-slate-700">📚 選択教科の管理・順序変更</label>
+          <button type="button" onclick="resetSubjectsToDefault()" class="text-[10px] text-teal-700 hover:underline font-bold">
+            初期状態に戻す
+          </button>
         </div>
+        <p class="text-[11px] text-slate-400 leading-tight">▲▼ボタンで教科の並び順を変更できます。順序は選択フォームにすぐ反映されます。</p>
+        
+        <!-- 並び替え対応リスト -->
+        <div id="subjectReorderList" class="space-y-1.5 p-2 bg-slate-50 border border-slate-200/80 rounded-xl max-h-56 overflow-y-auto">
+          <!-- JSで動的描画 -->
+        </div>
+
+        <!-- 教科追加フォーム -->
         <div class="flex space-x-1.5 pt-1">
-          <input type="text" id="newSubjectInput" placeholder="新しい教科名" class="flex-1 px-2.5 py-1.5 border rounded-lg text-xs">
-          <button type="button" onclick="addSubject()" class="px-3 py-1.5 bg-slate-800 text-white font-bold text-xs rounded-lg hover:bg-slate-700 transition">
+          <input type="text" id="newSubjectInput" placeholder="新しい教科名を入力" class="flex-1 px-3 py-2 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-teal-600/30 focus:border-teal-600">
+          <button type="button" onclick="addSubject()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs rounded-xl transition-colors">
             追加
           </button>
         </div>
@@ -205,37 +327,61 @@
 
       <hr class="border-slate-100">
 
-      <!-- 2. Supabase設定セクション -->
+      <!-- Supabase設定セクション -->
       <div class="space-y-2">
-        <label class="block text-xs font-bold text-slate-700">⚡ Supabase連携設定</label>
+        <label class="block text-xs font-bold text-slate-700">⚡ Supabase データベース連携</label>
         <div>
           <label class="block text-[10px] text-slate-500 mb-0.5">Project URL</label>
-          <input type="text" id="cfgUrl" class="w-full px-2.5 py-1.5 border rounded-lg text-xs font-mono">
+          <input type="text" id="cfgUrl" class="w-full px-2.5 py-1.5 border border-slate-200 rounded-lg text-xs font-mono bg-slate-50 focus:outline-none focus:border-teal-600">
         </div>
         <div>
           <label class="block text-[10px] text-slate-500 mb-0.5">Anon Key</label>
-          <input type="password" id="cfgKey" class="w-full px-2.5 py-1.5 border rounded-lg text-xs font-mono">
+          <input type="password" id="cfgKey" class="w-full px-2.5 py-1.5 border border-slate-200 rounded-lg text-xs font-mono bg-slate-50 focus:outline-none focus:border-teal-600">
         </div>
       </div>
 
-      <button onclick="saveSettings()" class="w-full py-2 bg-indigo-600 text-white font-bold text-xs rounded-xl hover:bg-indigo-700 transition">
-        保存して閉じる
+      <button onclick="saveSettings()" class="w-full py-2.5 bg-teal-700 hover:bg-teal-800 text-white font-bold text-xs rounded-xl shadow-xs transition-colors">
+        設定を保存して閉じる
       </button>
+    </div>
+  </div>
+
+  <!-- カスタム確認モーダル -->
+  <div id="confirmModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center hidden p-4">
+    <div class="bg-white w-full max-w-xs rounded-2xl p-5 shadow-2xl space-y-4 text-center border border-slate-200">
+      <div class="w-12 h-12 bg-rose-50 text-rose-500 rounded-full flex items-center justify-center mx-auto text-xl">
+        <i class="fa-solid fa-trash-can"></i>
+      </div>
+      <div>
+        <h4 class="font-bold text-slate-800 text-sm">予定の削除</h4>
+        <p class="text-xs text-slate-500 mt-1">この予定を削除してもよろしいですか？</p>
+      </div>
+      <div class="flex space-x-2">
+        <button onclick="closeConfirmModal(false)" class="flex-1 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition-colors">
+          キャンセル
+        </button>
+        <button id="confirmExecuteBtn" onclick="closeConfirmModal(true)" class="flex-1 py-2 bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs rounded-xl transition-colors">
+          削除する
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- カスタムトースト通知 -->
+  <div id="toast" class="fixed top-5 left-1/2 -translate-x-1/2 z-50 transition-all duration-300 opacity-0 pointer-events-none transform -translate-y-2">
+    <div id="toastContent" class="bg-slate-800 text-white px-4 py-2.5 rounded-xl shadow-lg text-xs font-bold flex items-center space-x-2 border border-slate-700">
+      <i id="toastIcon" class="fa-solid fa-circle-info text-teal-400"></i>
+      <span id="toastMessage">メッセージ</span>
     </div>
   </div>
 
   <script>
     // デフォルト教科リスト
     const DEFAULT_SUBJECTS = [
-      '国語', '現代の国語', '言語文化', '論理国語',
-      '数学I', '数学A', '数学II', '数学B', '数学III', '数学C',
-      '英語', '英語コミュニケーション', '論理・表現',
-      '物理', '化学', '生物', '地学',
-      '歴史総合', '日本史', '世界史', '地理総合', '公共', '倫理', '政治・経済',
-      '情報I', '保健体育', '音楽', '美術', '家庭科', 'その他'
+      '論理国語', '古典探究', '数学', '英コミュ', '論理表現',
+      '物理', '生物', '化学', '公共', '情報II', '家庭科', '保健', '体育'
     ];
 
-    // 教科リストの読み込み（LocalStorageに保存されていればそれを優先）
     let subjects = JSON.parse(localStorage.getItem('cfg_subjects')) || DEFAULT_SUBJECTS;
 
     let SUPABASE_URL = localStorage.getItem('cfg_sp_url') || '';
@@ -246,17 +392,19 @@
     let activeFilter = 'all';
     let currentViewMode = 'list';
     let calDate = new Date();
+    let pendingDeleteId = null;
+    let selectedDayDateStr = ''; // 現在日別モーダルで選択している日付
 
-    // PWA Manifest
+    // Dynamic Manifest
     const manifest = {
-      "name": "授業変更・小テスト",
-      "short_name": "授業変更",
+      "name": "授業変更・小テスト・提出物管理",
+      "short_name": "授業・課題",
       "start_url": "./",
       "display": "standalone",
-      "background_color": "#f1f5f9",
-      "theme_color": "#4f46e5",
+      "background_color": "#1e293b",
+      "theme_color": "#1e293b",
       "icons": [{
-        "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%234f46e5'/><text x='50' y='65' font-size='50' text-anchor='middle' fill='white'>📅</text></svg>",
+        "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%231e293b'/><text x='50' y='65' font-size='50' text-anchor='middle' fill='%232a9d8f'>📚</text></svg>",
         "sizes": "192x192 512x512",
         "type": "image/svg+xml"
       }]
@@ -268,30 +416,73 @@
       initSupabase();
     });
 
-    // ドロップダウンの教科選択肢を更新
     function initDropdowns() {
-      const opts = subjects.map(s => `<option value="${s}">${s}</option>`).join('');
+      const opts = subjects.map(s => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join('');
       document.getElementById('formSubject').innerHTML = opts;
       document.getElementById('formSubjectFrom').innerHTML = opts;
       document.getElementById('formSubjectTo').innerHTML = opts;
     }
 
-    // --- 教科管理機能 ---
+    // トースト表示
+    function showToast(message, icon = 'fa-circle-info', colorClass = 'text-teal-400') {
+      const toast = document.getElementById('toast');
+      const msgEl = document.getElementById('toastMessage');
+      const iconEl = document.getElementById('toastIcon');
+
+      msgEl.textContent = message;
+      iconEl.className = `fa-solid ${icon} ${colorClass}`;
+
+      toast.classList.remove('opacity-0', 'pointer-events-none', '-translate-y-2');
+      toast.classList.add('opacity-100', 'translate-y-0');
+
+      setTimeout(() => {
+        toast.classList.remove('opacity-100', 'translate-y-0');
+        toast.classList.add('opacity-0', 'pointer-events-none', '-translate-y-2');
+      }, 3000);
+    }
+
+    // 教科マネージャー
     function renderSubjectManager() {
-      const container = document.getElementById('subjectTagList');
+      const container = document.getElementById('subjectReorderList');
       container.innerHTML = '';
 
       subjects.forEach((sub, idx) => {
-        const tag = document.createElement('span');
-        tag.className = 'inline-flex items-center space-x-1 px-2 py-1 bg-white border border-slate-200 rounded-lg text-xs text-slate-700 shadow-2xs';
-        tag.innerHTML = `
-          <span>${escapeHtml(sub)}</span>
-          <button type="button" onclick="removeSubject(${idx})" class="text-slate-400 hover:text-red-500 ml-1">
-            <i class="fa-solid fa-xmark text-[10px]"></i>
-          </button>
+        const item = document.createElement('div');
+        item.className = 'flex items-center justify-between p-2 bg-white border border-slate-200/80 rounded-xl text-xs font-medium text-slate-700 shadow-2xs';
+        
+        const isFirst = (idx === 0);
+        const isLast = (idx === subjects.length - 1);
+
+        item.innerHTML = `
+          <div class="flex items-center space-x-2 truncate pr-2">
+            <span class="w-5 text-[10px] text-slate-400 font-bold text-center">${idx + 1}</span>
+            <span class="truncate font-bold text-slate-800">${escapeHtml(sub)}</span>
+          </div>
+          <div class="flex items-center space-x-1 shrink-0">
+            <button type="button" onclick="moveSubject(${idx}, -1)" ${isFirst ? 'disabled class="w-6 h-6 text-slate-200 cursor-not-allowed"' : 'class="w-6 h-6 text-slate-500 hover:text-teal-700 hover:bg-slate-100 rounded-md flex items-center justify-center transition-colors"'}>
+              <i class="fa-solid fa-chevron-up text-[10px]"></i>
+            </button>
+            <button type="button" onclick="moveSubject(${idx}, 1)" ${isLast ? 'disabled class="w-6 h-6 text-slate-200 cursor-not-allowed"' : 'class="w-6 h-6 text-slate-500 hover:text-teal-700 hover:bg-slate-100 rounded-md flex items-center justify-center transition-colors"'}>
+              <i class="fa-solid fa-chevron-down text-[10px]"></i>
+            </button>
+            <button type="button" onclick="removeSubject(${idx})" class="w-6 h-6 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-md flex items-center justify-center transition-colors ml-1">
+              <i class="fa-solid fa-xmark text-xs"></i>
+            </button>
+          </div>
         `;
-        container.appendChild(tag);
+        container.appendChild(item);
       });
+    }
+
+    function moveSubject(index, direction) {
+      const newIndex = index + direction;
+      if (newIndex < 0 || newIndex >= subjects.length) return;
+
+      const temp = subjects[index];
+      subjects[index] = subjects[newIndex];
+      subjects[newIndex] = temp;
+
+      saveSubjectsToStorage();
     }
 
     function addSubject() {
@@ -300,31 +491,38 @@
       if (!name) return;
 
       if (subjects.includes(name)) {
-        alert('その教科はすでに追加されています');
+        showToast('その教科はすでに追加されています', 'fa-circle-exclamation', 'text-amber-400');
         return;
       }
 
       subjects.push(name);
-      localStorage.setItem('cfg_subjects', JSON.stringify(subjects));
+      saveSubjectsToStorage();
       input.value = '';
-      
-      renderSubjectManager();
-      initDropdowns();
+      showToast('教科を追加しました', 'fa-circle-check', 'text-emerald-400');
     }
 
     function removeSubject(index) {
       if (subjects.length <= 1) {
-        alert('教科は最低1つ必要です');
+        showToast('教科は最低1つ必要です', 'fa-circle-exclamation', 'text-amber-400');
         return;
       }
       subjects.splice(index, 1);
+      saveSubjectsToStorage();
+      showToast('教科を削除しました', 'fa-circle-check', 'text-emerald-400');
+    }
+
+    function resetSubjectsToDefault() {
+      subjects = [...DEFAULT_SUBJECTS];
+      saveSubjectsToStorage();
+      showToast('教科をデフォルト順に復元しました', 'fa-circle-check', 'text-teal-400');
+    }
+
+    function saveSubjectsToStorage() {
       localStorage.setItem('cfg_subjects', JSON.stringify(subjects));
-      
       renderSubjectManager();
       initDropdowns();
     }
 
-    // --- Supabase 連携 ---
     function initSupabase() {
       const banner = document.getElementById('statusBanner');
       const text = document.getElementById('statusText');
@@ -332,15 +530,15 @@
       if (SUPABASE_URL && SUPABASE_ANON_KEY && window.supabase) {
         try {
           supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-          banner.className = 'mb-4 p-2.5 text-xs rounded-xl flex justify-between items-center bg-emerald-50 text-emerald-800 border-emerald-200';
-          text.innerHTML = '<i class="fa-solid fa-cloud-check mr-1 text-emerald-600"></i> Supabase接続完了';
+          banner.className = 'mb-4 p-2.5 text-xs rounded-xl flex justify-between items-center bg-teal-50 text-teal-800 border border-teal-200/80';
+          text.innerHTML = '<i class="fa-solid fa-cloud-check mr-1 text-teal-600"></i> Supabase クラウド同期中';
           loadSchedules();
           return;
         } catch(e) { console.error(e); }
       }
 
-      banner.className = 'mb-4 p-2.5 text-xs rounded-xl flex justify-between items-center bg-amber-50 text-amber-800 border-amber-200';
-      text.innerHTML = '<i class="fa-solid fa-hard-drive mr-1 text-amber-600"></i> ローカルモード (Supabase未接続)';
+      banner.className = 'mb-4 p-2.5 text-xs rounded-xl flex justify-between items-center bg-slate-200/60 text-slate-700 border border-slate-300/60';
+      text.innerHTML = '<i class="fa-solid fa-hard-drive mr-1 text-slate-500"></i> ローカルモード (端末内保存)';
       loadLocalSchedules();
     }
 
@@ -366,8 +564,9 @@
         schedules = JSON.parse(local);
       } else {
         schedules = [
-          { id: '1', date: getTodayStr(), type: '小テスト', subject: '英語コミュニケーション', content: '単語テスト Lesson 4', author: '係' },
-          { id: '2', date: getTodayStr(), type: '授業変更', subject: '数学I → 物理', content: '体育館行事のため変更', author: '担任' }
+          { id: '1', date: getTodayStr(), type: '小テスト', subject: '英コミュ', content: 'Lesson 4 単語テスト (p.24-25)', author: '係' },
+          { id: '2', date: getTodayStr(), type: '授業変更', subject: '数学 → 物理', content: '体育館行事のため時間割変更', author: '担任' },
+          { id: '3', date: getTodayStr(), type: '提出物', subject: '論理国語', content: 'ワークブック 第2章 まとめノート提出', author: '国語担当' }
         ];
         saveLocalSchedules();
       }
@@ -378,7 +577,6 @@
       localStorage.setItem('demo_data', JSON.stringify(schedules));
     }
 
-    // 保存・更新処理
     async function saveSchedule(e) {
       e.preventDefault();
 
@@ -389,12 +587,12 @@
       const author = document.getElementById('formAuthor').value.trim();
 
       let subject = '';
-      if (type === '小テスト') {
-        subject = document.getElementById('formSubject').value;
-      } else {
+      if (type === '授業変更') {
         const from = document.getElementById('formSubjectFrom').value;
         const to = document.getElementById('formSubjectTo').value;
         subject = `${from} → ${to}`;
+      } else {
+        subject = document.getElementById('formSubject').value;
       }
 
       const item = { date, type, subject, content, author };
@@ -408,9 +606,10 @@
             const { error } = await supabaseClient.from('schedule_items').insert([item]);
             if (error) throw error;
           }
+          showToast('保存しました', 'fa-circle-check', 'text-teal-400');
           loadSchedules();
         } catch (err) {
-          alert('保存できませんでした: ' + err.message);
+          showToast('保存失敗: ' + err.message, 'fa-triangle-exclamation', 'text-rose-400');
         }
       } else {
         if (editId) {
@@ -420,32 +619,51 @@
           schedules.push(item);
         }
         saveLocalSchedules();
+        showToast('保存しました', 'fa-circle-check', 'text-teal-400');
         render();
       }
 
       closeModal();
+      // もし日別予定モーダルが開いていれば更新
+      if (!document.getElementById('dayScheduleModal').classList.contains('hidden') && selectedDayDateStr) {
+        openDayModal(selectedDayDateStr);
+      }
     }
 
-    // 削除
-    async function deleteItem(id) {
-      if (!confirm('本当に削除しますか？')) return;
+    function deleteItem(id) {
+      pendingDeleteId = id;
+      document.getElementById('confirmModal').classList.remove('hidden');
+    }
+
+    async function closeConfirmModal(confirmed) {
+      document.getElementById('confirmModal').classList.add('hidden');
+      if (!confirmed || !pendingDeleteId) return;
+
+      const id = pendingDeleteId;
+      pendingDeleteId = null;
 
       if (supabaseClient) {
         try {
           const { error } = await supabaseClient.from('schedule_items').delete().eq('id', id);
           if (error) throw error;
+          showToast('削除しました', 'fa-circle-check', 'text-teal-400');
           loadSchedules();
         } catch (err) {
-          alert('削除できませんでした: ' + err.message);
+          showToast('削除エラー: ' + err.message, 'fa-triangle-exclamation', 'text-rose-400');
         }
       } else {
         schedules = schedules.filter(s => s.id !== id);
         saveLocalSchedules();
+        showToast('削除しました', 'fa-circle-check', 'text-teal-400');
         render();
+      }
+
+      // 日別モーダルが開いていれば再読み込み
+      if (!document.getElementById('dayScheduleModal').classList.contains('hidden') && selectedDayDateStr) {
+        openDayModal(selectedDayDateStr);
       }
     }
 
-    // 編集モーダル開く
     function openEditModal(id) {
       const item = schedules.find(s => s.id === id);
       if (!item) return;
@@ -460,24 +678,98 @@
       for (let r of radios) r.checked = (r.value === item.type);
       toggleTypeUI();
 
-      if (item.type === '小テスト') {
+      if (item.type === '授業変更') {
+        if (item.subject.includes('→')) {
+          const parts = item.subject.split('→').map(s => s.trim());
+          document.getElementById('formSubjectFrom').value = parts[0] || subjects[0];
+          document.getElementById('formSubjectTo').value = parts[1] || subjects[0];
+        }
+      } else {
         document.getElementById('formSubject').value = item.subject;
-      } else if (item.subject.includes('→')) {
-        const parts = item.subject.split('→').map(s => s.trim());
-        document.getElementById('formSubjectFrom').value = parts[0] || subjects[0];
-        document.getElementById('formSubjectTo').value = parts[1] || subjects[0];
       }
 
       document.getElementById('formModal').classList.remove('hidden');
     }
 
-    // レンダリング統合
+    // 日別予定一覧モーダルの表示 logic
+    function openDayModal(dateStr) {
+      selectedDayDateStr = dateStr;
+      const modal = document.getElementById('dayScheduleModal');
+      const titleEl = document.getElementById('dayModalTitle');
+      const listEl = document.getElementById('dayScheduleList');
+
+      titleEl.textContent = `${formatDateFull(dateStr)} の予定`;
+      listEl.innerHTML = '';
+
+      // その日のすべての予定を抽出 (制限なく全件)
+      let dayItems = schedules.filter(s => s.date === dateStr);
+
+      if (dayItems.length === 0) {
+        listEl.innerHTML = `
+          <div class="py-12 text-center text-slate-400 bg-slate-50/80 rounded-2xl border border-dashed border-slate-200 p-6">
+            <i class="fa-regular fa-calendar-xmark text-3xl mb-2 text-slate-300"></i>
+            <p class="text-xs font-bold text-slate-500">この日の予定はありません</p>
+            <p class="text-[11px] text-slate-400 mt-0.5">「＋ この日に予定を追加」から登録できます</p>
+          </div>
+        `;
+      } else {
+        dayItems.forEach(item => {
+          const card = document.createElement('div');
+          card.className = 'bg-white rounded-2xl p-3.5 border border-slate-200/80 shadow-2xs space-y-2 hover:border-slate-300 transition-colors';
+          card.innerHTML = `
+            <div class="flex justify-between items-center">
+              <div>
+                ${getTypeBadge(item.type)}
+              </div>
+              <div class="flex items-center space-x-1">
+                <button onclick="openEditModal('${item.id}')" class="w-7 h-7 rounded-lg text-slate-400 hover:text-teal-700 hover:bg-slate-100 flex items-center justify-center text-xs transition-colors" title="編集">
+                  <i class="fa-solid fa-pen"></i>
+                </button>
+                <button onclick="deleteItem('${item.id}')" class="w-7 h-7 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 flex items-center justify-center text-xs transition-colors" title="削除">
+                  <i class="fa-regular fa-trash-can"></i>
+                </button>
+              </div>
+            </div>
+            <h4 class="font-bold text-slate-800 text-sm tracking-wide">${escapeHtml(item.subject)}</h4>
+            <p class="text-xs text-slate-600 bg-slate-50/80 border border-slate-100 p-2.5 rounded-xl whitespace-pre-wrap leading-relaxed">${escapeHtml(item.content)}</p>
+            <div class="text-right text-[10px] text-slate-400 font-medium pt-1">登録: ${escapeHtml(item.author)}</div>
+          `;
+          listEl.appendChild(card);
+        });
+      }
+
+      modal.classList.remove('hidden');
+    }
+
+    function closeDayModal() {
+      document.getElementById('dayScheduleModal').classList.add('hidden');
+    }
+
+    function addNewFromDayModal() {
+      const dateToUse = selectedDayDateStr || getTodayStr();
+      closeDayModal();
+      openModal(dateToUse);
+    }
+
     function render() {
       renderList();
       renderCalendar();
+      if (!document.getElementById('dayScheduleModal').classList.contains('hidden') && selectedDayDateStr) {
+        openDayModal(selectedDayDateStr);
+      }
     }
 
-    // リスト描画
+    function getTypeBadge(type) {
+      if (type === '小テスト') {
+        return '<span class="px-2 py-0.5 text-[11px] font-bold rounded-md bg-amber-50 text-amber-800 border border-amber-200/80">📝 小テスト</span>';
+      } else if (type === '授業変更') {
+        return '<span class="px-2 py-0.5 text-[11px] font-bold rounded-md bg-teal-50 text-teal-800 border border-teal-200/80">🔄 授業変更</span>';
+      } else if (type === '提出物') {
+        return '<span class="px-2 py-0.5 text-[11px] font-bold rounded-md bg-rose-50 text-rose-800 border border-rose-200/80">📤 提出物</span>';
+      }
+      return '';
+    }
+
     function renderList() {
       const listEl = document.getElementById('scheduleList');
       const emptyEl = document.getElementById('emptyList');
@@ -497,37 +789,33 @@
       emptyEl.classList.add('hidden');
 
       list.forEach(item => {
-        const isQuiz = item.type === '小テスト';
-        const badgeStyle = isQuiz ? 'bg-amber-100 text-amber-800' : 'bg-indigo-100 text-indigo-800';
-
         const card = document.createElement('div');
-        card.className = 'bg-white rounded-2xl p-4 shadow-sm border border-slate-200 space-y-2';
+        card.className = 'bg-white rounded-2xl p-4 shadow-xs border border-slate-200/80 space-y-2 hover:border-slate-300 transition-colors flex flex-col justify-between';
         card.innerHTML = `
-          <div class="flex justify-between items-center">
-            <div class="flex items-center space-x-2">
-              <span class="px-2 py-0.5 text-xs font-bold rounded-md ${badgeStyle}">
-                ${isQuiz ? '📝' : '🔄'} ${item.type}
-              </span>
-              <span class="text-xs font-bold text-slate-500">${formatDate(item.date)}</span>
+          <div class="space-y-2">
+            <div class="flex justify-between items-center">
+              <div class="flex items-center space-x-2">
+                ${getTypeBadge(item.type)}
+                <span class="text-xs font-bold text-slate-500">${formatDate(item.date)}</span>
+              </div>
+              <div class="flex items-center space-x-1">
+                <button onclick="openEditModal('${item.id}')" class="w-7 h-7 rounded-lg text-slate-400 hover:text-teal-700 hover:bg-slate-100 flex items-center justify-center text-xs transition-colors">
+                  <i class="fa-solid fa-pen"></i>
+                </button>
+                <button onclick="deleteItem('${item.id}')" class="w-7 h-7 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 flex items-center justify-center text-xs transition-colors">
+                  <i class="fa-regular fa-trash-can"></i>
+                </button>
+              </div>
             </div>
-            <div class="flex items-center space-x-2">
-              <button onclick="openEditModal('${item.id}')" class="text-slate-400 hover:text-indigo-600 text-xs">
-                <i class="fa-solid fa-pen"></i>
-              </button>
-              <button onclick="deleteItem('${item.id}')" class="text-slate-400 hover:text-red-500 text-xs">
-                <i class="fa-regular fa-trash-can"></i>
-              </button>
-            </div>
+            <h3 class="font-bold text-slate-800 text-sm tracking-wide">${escapeHtml(item.subject)}</h3>
+            <p class="text-xs text-slate-600 bg-slate-50/80 border border-slate-100 p-2.5 rounded-xl whitespace-pre-wrap leading-relaxed">${escapeHtml(item.content)}</p>
           </div>
-          <h3 class="font-bold text-slate-800 text-sm">${escapeHtml(item.subject)}</h3>
-          <p class="text-xs text-slate-600 bg-slate-50 p-2 rounded-xl whitespace-pre-wrap">${escapeHtml(item.content)}</p>
-          <div class="text-right text-[10px] text-slate-400">登録: ${escapeHtml(item.author)}</div>
+          <div class="text-right text-[10px] text-slate-400 font-medium pt-2 border-t border-slate-50 mt-2">登録: ${escapeHtml(item.author)}</div>
         `;
         listEl.appendChild(card);
       });
     }
 
-    // カレンダー描画
     function renderCalendar() {
       const year = calDate.getFullYear();
       const month = calDate.getMonth();
@@ -567,27 +855,34 @@
 
     function createCalCell(day, isOther, isToday = false, items = [], dateStr = '') {
       const cell = document.createElement('div');
-      cell.className = `min-h-[56px] p-1 border rounded-xl flex flex-col justify-between text-xs ${
-        isOther ? 'bg-slate-50 text-slate-300 border-slate-100' : 'bg-white text-slate-700 border-slate-200 cursor-pointer hover:border-indigo-300'
-      } ${isToday ? 'ring-2 ring-indigo-500 bg-indigo-50/20' : ''}`;
+      cell.className = `min-h-[68px] sm:min-h-[84px] p-1 sm:p-1.5 border rounded-xl flex flex-col justify-between text-xs transition-all ${
+        isOther ? 'bg-slate-50/50 text-slate-300 border-slate-100' : 'bg-white text-slate-700 border-slate-200/70 cursor-pointer hover:border-teal-500 hover:shadow-xs'
+      } ${isToday ? 'ring-2 ring-teal-600 bg-teal-50/20' : ''}`;
 
       if (!isOther) {
-        cell.onclick = () => openModal(dateStr);
+        // カレンダーセルタップ時は「日別予定一覧モーダル」を起動
+        cell.onclick = () => openDayModal(dateStr);
       }
 
       let badgeHtml = '';
       if (items.length > 0) {
-        badgeHtml = '<div class="space-y-0.5 mt-0.5">';
+        badgeHtml = '<div class="space-y-0.5 sm:space-y-1 mt-0.5">';
         items.slice(0, 2).forEach(it => {
-          const bg = it.type === '小テスト' ? 'bg-amber-100 text-amber-800' : 'bg-indigo-100 text-indigo-800';
-          badgeHtml += `<div class="text-[8px] px-1 py-0.5 rounded font-bold truncate ${bg}">${escapeHtml(it.subject)}</div>`;
+          let bg = 'bg-slate-100 text-slate-700';
+          if (it.type === '小テスト') bg = 'bg-amber-100/90 text-amber-900';
+          if (it.type === '授業変更') bg = 'bg-teal-100/90 text-teal-900';
+          if (it.type === '提出物') bg = 'bg-rose-100/90 text-rose-900';
+
+          badgeHtml += `<div class="text-[8px] sm:text-[10px] px-1 py-0.5 rounded-md font-bold truncate ${bg}">${escapeHtml(it.subject)}</div>`;
         });
-        if (items.length > 2) badgeHtml += `<div class="text-[8px] text-slate-400 text-center">+${items.length - 2}</div>`;
+        if (items.length > 2) badgeHtml += `<div class="text-[8px] text-teal-700 font-bold text-center bg-teal-50 rounded-md py-0.5">+${items.length - 2}件</div>`;
         badgeHtml += '</div>';
       }
 
       cell.innerHTML = `
-        <div class="font-bold ${isToday ? 'text-indigo-600' : ''}">${day}</div>
+        <div class="font-bold text-[10px] sm:text-xs flex justify-between items-center">
+          <span class="${isToday ? 'text-teal-700 font-black' : ''}">${day}</span>
+        </div>
         ${badgeHtml}
       `;
       return cell;
@@ -598,40 +893,55 @@
       renderCalendar();
     }
 
-    // 表示モード切替
     function toggleView(mode) {
       currentViewMode = mode;
       const listBtn = document.getElementById('viewListBtn');
       const calBtn = document.getElementById('viewCalBtn');
+      const bothBtn = document.getElementById('viewBothBtn');
+
       const listView = document.getElementById('listView');
       const calView = document.getElementById('calendarView');
 
+      listBtn.className = 'px-3 py-1.5 rounded-lg text-slate-300 hover:text-white font-medium transition-all';
+      calBtn.className = 'px-3 py-1.5 rounded-lg text-slate-300 hover:text-white font-medium transition-all';
+      bothBtn.className = 'px-3 py-1.5 rounded-lg text-slate-300 hover:text-white font-medium transition-all hidden md:block';
+
       if (mode === 'list') {
-        listBtn.className = 'px-2.5 py-1 rounded-md bg-white text-indigo-700 font-bold shadow-sm transition';
-        calBtn.className = 'px-2.5 py-1 rounded-md text-indigo-100 font-medium transition';
-        listView.classList.remove('hidden');
+        listBtn.className = 'px-3 py-1.5 rounded-lg bg-teal-700 text-white font-bold shadow-xs transition-all';
+        listView.className = 'md:col-span-12 space-y-3';
         calView.classList.add('hidden');
-      } else {
-        calBtn.className = 'px-2.5 py-1 rounded-md bg-white text-indigo-700 font-bold shadow-sm transition';
-        listBtn.className = 'px-2.5 py-1 rounded-md text-indigo-100 font-medium transition';
-        calView.classList.remove('hidden');
+        listView.classList.remove('hidden');
+      } else if (mode === 'calendar') {
+        calBtn.className = 'px-3 py-1.5 rounded-lg bg-teal-700 text-white font-bold shadow-xs transition-all';
+        calView.className = 'md:col-span-12 bg-white rounded-2xl p-4 sm:p-6 shadow-xs border border-slate-200/80';
         listView.classList.add('hidden');
+        calView.classList.remove('hidden');
+        renderCalendar();
+      } else if (mode === 'both') {
+        bothBtn.className = 'px-3 py-1.5 rounded-lg bg-teal-700 text-white font-bold shadow-xs transition-all block';
+        listView.className = 'md:col-span-5 space-y-3';
+        calView.className = 'md:col-span-7 bg-white rounded-2xl p-4 sm:p-6 shadow-xs border border-slate-200/80';
+        listView.classList.remove('hidden');
+        calView.classList.remove('hidden');
         renderCalendar();
       }
     }
 
-    // フィルター選択
     function setFilter(filter) {
       activeFilter = filter;
-      ['all', 'quiz', 'change'].forEach(key => {
-        const btn = document.getElementById('tab-' + key);
-        const match = (key === 'all' && filter === 'all') || 
-                      (key === 'quiz' && filter === '小テスト') || 
-                      (key === 'change' && filter === '授業変更');
-        if (match) {
-          btn.className = 'flex-1 py-2 rounded-lg bg-indigo-50 text-indigo-600 transition';
+      const filterKeys = [
+        { id: 'tab-all', val: 'all' },
+        { id: 'tab-quiz', val: '小テスト' },
+        { id: 'tab-change', val: '授業変更' },
+        { id: 'tab-task', val: '提出物' }
+      ];
+
+      filterKeys.forEach(item => {
+        const btn = document.getElementById(item.id);
+        if (filter === item.val) {
+          btn.className = 'py-2 px-3 rounded-xl bg-teal-700 text-white transition-all shadow-xs';
         } else {
-          btn.className = 'flex-1 py-2 rounded-lg hover:text-slate-800 transition';
+          btn.className = 'py-2 px-3 rounded-xl text-slate-500 hover:text-slate-800 transition-all';
         }
       });
       render();
@@ -639,16 +949,25 @@
 
     function toggleTypeUI() {
       const type = document.querySelector('input[name="formType"]:checked').value;
-      if (type === '小テスト') {
-        document.getElementById('singleSubjectArea').classList.remove('hidden');
-        document.getElementById('doubleSubjectArea').classList.add('hidden');
+      const singleArea = document.getElementById('singleSubjectArea');
+      const doubleArea = document.getElementById('doubleSubjectArea');
+      const label = document.getElementById('contentLabel');
+
+      if (type === '授業変更') {
+        singleArea.classList.add('hidden');
+        doubleArea.classList.remove('hidden');
+        label.textContent = '理由 / 備考';
+      } else if (type === '提出物') {
+        singleArea.classList.remove('hidden');
+        doubleArea.classList.add('hidden');
+        label.textContent = '提出範囲 / 詳細内容';
       } else {
-        document.getElementById('singleSubjectArea').classList.add('hidden');
-        document.getElementById('doubleSubjectArea').classList.remove('hidden');
+        singleArea.classList.remove('hidden');
+        doubleArea.classList.add('hidden');
+        label.textContent = '内容 / 範囲';
       }
     }
 
-    // モーダル関連
     function openModal(presetDate = '') {
       document.getElementById('editId').value = '';
       document.getElementById('modalTitle').textContent = '予定を追加';
@@ -682,6 +1001,7 @@
       SUPABASE_ANON_KEY = k;
       closeSettings();
       initSupabase();
+      showToast('設定を更新しました', 'fa-circle-check', 'text-teal-400');
     }
 
     // ユーティリティ
@@ -696,6 +1016,14 @@
       const date = new Date(y, m - 1, d);
       const dayStr = ['日', '月', '火', '水', '木', '金', '土'][date.getDay()];
       return `${parseInt(m)}/${parseInt(d)}(${dayStr})`;
+    }
+
+    function formatDateFull(str) {
+      if (!str) return '';
+      const [y, m, d] = str.split('-');
+      const date = new Date(y, m - 1, d);
+      const dayStr = ['日', '月', '火', '水', '木', '金', '土'][date.getDay()];
+      return `${parseInt(m)}月${parseInt(d)}日(${dayStr})`;
     }
 
     function escapeHtml(s) {
