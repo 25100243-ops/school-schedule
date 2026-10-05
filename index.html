@@ -4,28 +4,25 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>授業変更・小テスト管理</title>
-  
-  <!-- PWA & Mobile Meta Tags -->
+
+  <!-- PWA / Mobile Setup -->
   <meta name="theme-color" content="#4f46e5">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="授業変更">
   <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%234f46e5'/><text x='50' y='65' font-size='50' text-anchor='middle' fill='white'>📅</text></svg>">
-  
-  <!-- Manifest -->
   <link rel="manifest" id="manifest-placeholder">
 
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
-  
-  <!-- FontAwesome Icons -->
+
+  <!-- Font Awesome -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  
+
   <!-- Supabase JS Client -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
   <style>
-    /* iOS風タッチの最適化 */
     body {
       -webkit-tap-highlight-color: transparent;
       user-select: none;
@@ -33,280 +30,205 @@
     input, textarea, select {
       user-select: auto;
     }
-    /* カスタムスクロールバー */
-    ::-webkit-scrollbar {
-      width: 6px;
-      height: 6px;
-    }
-    ::-webkit-scrollbar-thumb {
-      background: #cbd5e1;
-      border-radius: 3px;
-    }
   </style>
 </head>
-<body class="bg-slate-50 text-slate-800 antialiased pb-20">
+<body class="bg-slate-100 text-slate-800 antialiased min-h-screen pb-24">
 
-  <!-- Header -->
-  <header class="sticky top-0 z-20 bg-indigo-600 text-white shadow-md">
-    <div class="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between">
+  <!-- ヘッダー -->
+  <header class="bg-indigo-600 text-white shadow-md sticky top-0 z-20">
+    <div class="max-w-md mx-auto px-4 py-3 flex justify-between items-center">
       <div class="flex items-center space-x-2">
-        <i class="fa-solid fa-calendar-check text-2xl"></i>
-        <h1 class="text-xl font-bold tracking-wide">授業・テスト管理</h1>
+        <i class="fa-solid fa-calendar-check text-xl"></i>
+        <h1 class="font-bold text-lg">授業変更・小テスト</h1>
       </div>
       <div class="flex items-center space-x-2">
-        <!-- View Toggle (List / Calendar) -->
-        <div class="bg-indigo-800/60 p-1 rounded-lg flex text-xs font-semibold">
-          <button id="viewListBtn" onclick="setViewMode('list')" class="px-2.5 py-1 rounded-md transition-colors bg-white text-indigo-700 shadow-sm">
-            <i class="fa-solid fa-list mr-1"></i>リスト
+        <!-- 表示切替ボタン -->
+        <div class="bg-indigo-700/60 p-1 rounded-lg flex text-xs">
+          <button id="viewListBtn" onclick="toggleView('list')" class="px-2.5 py-1 rounded-md bg-white text-indigo-700 font-bold shadow-sm transition">
+            リスト
           </button>
-          <button id="viewCalBtn" onclick="setViewMode('calendar')" class="px-2.5 py-1 rounded-md transition-colors text-indigo-100 hover:text-white">
-            <i class="fa-solid fa-calendar-days mr-1"></i>カレンダー
+          <button id="viewCalBtn" onclick="toggleView('calendar')" class="px-2.5 py-1 rounded-md text-indigo-100 font-medium transition">
+            カレンダー
           </button>
         </div>
-        <!-- Settings Modal Toggle -->
-        <button onclick="openSettingsModal()" class="p-2 text-indigo-100 hover:text-white rounded-lg hover:bg-indigo-500/50 transition">
+        <!-- 設定ボタン -->
+        <button onclick="openSettings()" class="text-indigo-200 hover:text-white p-1">
           <i class="fa-solid fa-gear text-lg"></i>
         </button>
       </div>
     </div>
   </header>
 
-  <!-- Main Container -->
-  <main class="max-w-3xl mx-auto px-4 pt-4">
+  <main class="max-w-md mx-auto px-4 pt-4">
 
-    <!-- Filter Tabs -->
-    <div class="flex bg-white p-1 rounded-xl shadow-sm border border-slate-200 mb-4">
-      <button onclick="setFilter('ALL')" id="tabALL" class="flex-1 py-2 text-sm font-bold rounded-lg transition-all text-indigo-600 bg-indigo-50 shadow-sm">
-        すべて <span id="countALL" class="text-xs ml-1 opacity-75">0</span>
-      </button>
-      <button onclick="setFilter('小テスト')" id="tabQuiz" class="flex-1 py-2 text-sm font-medium text-slate-500 rounded-lg transition-all hover:text-slate-800">
-        📝 小テスト <span id="countQuiz" class="text-xs ml-1 opacity-75">0</span>
-      </button>
-      <button onclick="setFilter('授業変更')" id="tabChange" class="flex-1 py-2 text-sm font-medium text-slate-500 rounded-lg transition-all hover:text-slate-800">
-        🔄 授業変更 <span id="countChange" class="text-xs ml-1 opacity-75">0</span>
-      </button>
+    <!-- 絞り込みタブ -->
+    <div class="flex bg-white p-1 rounded-xl shadow-sm border border-slate-200 mb-4 text-xs font-bold text-slate-500">
+      <button id="tab-all" onclick="setFilter('all')" class="flex-1 py-2 rounded-lg bg-indigo-50 text-indigo-600 transition">すべて</button>
+      <button id="tab-quiz" onclick="setFilter('小テスト')" class="flex-1 py-2 rounded-lg hover:text-slate-800 transition">小テストのみ</button>
+      <button id="tab-change" onclick="setFilter('授業変更')" class="flex-1 py-2 rounded-lg hover:text-slate-800 transition">授業変更のみ</button>
     </div>
 
-    <!-- Status Banner (Offline / Supabase State) -->
-    <div id="statusBanner" class="hidden mb-4 p-3 text-xs rounded-xl flex items-center justify-between border">
-      <span id="statusMessage">接続中...</span>
-      <button onclick="initSupabase()" class="underline font-bold">再接続</button>
+    <!-- ステータス通知 -->
+    <div id="statusBanner" class="hidden mb-4 p-2.5 text-xs rounded-xl flex justify-between items-center border">
+      <span id="statusText">接続確認中...</span>
+      <button onclick="initSupabase()" class="font-bold underline">再接続</button>
     </div>
 
-    <!-- VIEW 1: LIST VIEW -->
-    <section id="listView" class="space-y-3">
-      <div id="scheduleContainer" class="space-y-3">
-        <!-- JSで動的に追加されます -->
+    <!-- 1. リスト表示エリア -->
+    <div id="listView" class="space-y-3">
+      <div id="scheduleList" class="space-y-3"></div>
+      <div id="emptyList" class="hidden py-12 text-center text-slate-400">
+        <i class="fa-regular fa-calendar-xmark text-4xl mb-2"></i>
+        <p class="text-xs">予定はありません</p>
       </div>
-      <div id="emptyState" class="hidden py-16 text-center text-slate-400">
-        <i class="fa-regular fa-folder-open text-5xl mb-3 block text-slate-300"></i>
-        <p class="text-sm font-medium">予定が登録されていません</p>
-      </div>
-    </section>
+    </div>
 
-    <!-- VIEW 2: CALENDAR VIEW -->
-    <section id="calendarView" class="hidden bg-white rounded-2xl shadow-sm border border-slate-200 p-4">
-      <!-- Calendar Header -->
-      <div class="flex items-center justify-between mb-4">
-        <h2 id="calendarMonthTitle" class="text-lg font-bold text-slate-800">2026年 10月</h2>
-        <div class="flex space-x-1">
-          <button onclick="changeMonth(-1)" class="w-9 h-9 rounded-lg hover:bg-slate-100 flex items-center justify-center text-slate-600">
-            <i class="fa-solid fa-chevron-left"></i>
-          </button>
-          <button onclick="resetToCurrentMonth()" class="px-3 h-9 text-xs font-bold rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700">
-            今月
-          </button>
-          <button onclick="changeMonth(1)" class="w-9 h-9 rounded-lg hover:bg-slate-100 flex items-center justify-center text-slate-600">
-            <i class="fa-solid fa-chevron-right"></i>
-          </button>
-        </div>
+    <!-- 2. カレンダー表示エリア -->
+    <div id="calendarView" class="hidden bg-white rounded-2xl p-4 shadow-sm border border-slate-200">
+      <div class="flex justify-between items-center mb-4">
+        <button onclick="changeMonth(-1)" class="w-8 h-8 rounded-lg bg-slate-100 text-slate-600 flex items-center justify-center">
+          <i class="fa-solid fa-chevron-left text-xs"></i>
+        </button>
+        <h2 id="calMonthTitle" class="font-bold text-sm text-slate-700"></h2>
+        <button onclick="changeMonth(1)" class="w-8 h-8 rounded-lg bg-slate-100 text-slate-600 flex items-center justify-center">
+          <i class="fa-solid fa-chevron-right text-xs"></i>
+        </button>
       </div>
 
-      <!-- Calendar Days Header -->
-      <div class="grid grid-cols-7 gap-1 text-center font-bold text-xs text-slate-400 mb-2">
-        <div class="text-red-500">日</div>
-        <div>月</div>
-        <div>火</div>
-        <div>水</div>
-        <div>木</div>
-        <div>金</div>
-        <div class="text-blue-500">土</div>
+      <div class="grid grid-cols-7 gap-1 text-center text-[11px] font-bold text-slate-400 mb-1">
+        <span class="text-red-400">日</span><span>月</span><span>火</span><span>水</span><span>木</span><span>金</span><span class="text-blue-400">土</span>
       </div>
-
-      <!-- Calendar Grid -->
-      <div id="calendarGrid" class="grid grid-cols-7 gap-1">
-        <!-- JSで日付セルが生成されます -->
-      </div>
-    </section>
+      <div id="calendarGrid" class="grid grid-cols-7 gap-1"></div>
+    </div>
 
   </main>
 
-  <!-- Floating Action Button (新規追加) -->
-  <button onclick="openFormModal()" class="fixed bottom-6 right-6 w-14 h-14 bg-indigo-600 text-white rounded-full shadow-lg hover:bg-indigo-700 focus:outline-none flex items-center justify-center text-2xl transition-transform active:scale-95 z-30">
+  <!-- 追加ボタン (FAB) -->
+  <button onclick="openModal()" class="fixed bottom-6 right-6 w-14 h-14 bg-indigo-600 text-white rounded-full shadow-lg flex items-center justify-center text-xl hover:bg-indigo-700 transition active:scale-95 z-30">
     <i class="fa-solid fa-plus"></i>
   </button>
 
-  <!-- MODAL 1: 新規登録 / 編集 モーダル -->
-  <div id="formModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 hidden transition-opacity">
-    <div class="bg-white w-full sm:max-w-lg rounded-t-2xl sm:rounded-2xl shadow-xl overflow-hidden max-h-[90vh] flex flex-col">
-      <div class="px-5 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">
-        <h3 id="modalTitle" class="font-bold text-slate-800 flex items-center gap-2">
-          <i class="fa-solid fa-pen-to-square text-indigo-600"></i> 予定を追加
-        </h3>
-        <button onclick="closeFormModal()" class="w-8 h-8 rounded-full hover:bg-slate-200 flex items-center justify-center text-slate-400 hover:text-slate-600">
-          <i class="fa-solid fa-xmark text-lg"></i>
-        </button>
+  <!-- 登録・編集モーダル -->
+  <div id="formModal" class="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center hidden">
+    <div class="bg-white w-full max-w-md rounded-t-2xl sm:rounded-2xl p-5 shadow-xl space-y-4 max-h-[90vh] overflow-y-auto">
+      <div class="flex justify-between items-center border-b pb-3">
+        <h3 id="modalTitle" class="font-bold text-slate-800">予定を追加</h3>
+        <button onclick="closeModal()" class="text-slate-400 text-lg"><i class="fa-solid fa-xmark"></i></button>
       </div>
-      
-      <form id="scheduleForm" onsubmit="handleFormSubmit(event)" class="p-5 overflow-y-auto space-y-4">
+
+      <form id="scheduleForm" onsubmit="saveSchedule(event)" class="space-y-3">
         <input type="hidden" id="editId" value="">
 
-        <!-- タイプ選択 -->
+        <!-- タイプ -->
         <div>
-          <label class="block text-xs font-bold text-slate-600 mb-1">タイプ <span class="text-red-500">*</span></label>
-          <div class="grid grid-cols-2 gap-2">
+          <label class="block text-xs font-bold text-slate-600 mb-1">タイプ</label>
+          <div class="grid grid-cols-2 gap-2 text-xs font-bold">
             <label class="cursor-pointer">
-              <input type="radio" name="formType" value="小テスト" checked onchange="toggleTypeFields()" class="peer sr-only">
-              <div class="p-2.5 text-center rounded-xl border border-slate-200 font-bold text-sm text-slate-600 peer-checked:bg-amber-50 peer-checked:border-amber-500 peer-checked:text-amber-700 transition">
-                📝 小テスト
-              </div>
+              <input type="radio" name="formType" value="小テスト" checked onchange="toggleTypeUI()" class="peer sr-only">
+              <div class="py-2 text-center rounded-xl border border-slate-200 peer-checked:bg-amber-50 peer-checked:border-amber-400 peer-checked:text-amber-700">📝 小テスト</div>
             </label>
             <label class="cursor-pointer">
-              <input type="radio" name="formType" value="授業変更" onchange="toggleTypeFields()" class="peer sr-only">
-              <div class="p-2.5 text-center rounded-xl border border-slate-200 font-bold text-sm text-slate-600 peer-checked:bg-indigo-50 peer-checked:border-indigo-500 peer-checked:text-indigo-700 transition">
-                🔄 授業変更
-              </div>
+              <input type="radio" name="formType" value="授業変更" onchange="toggleTypeUI()" class="peer sr-only">
+              <div class="py-2 text-center rounded-xl border border-slate-200 peer-checked:bg-indigo-50 peer-checked:border-indigo-400 peer-checked:text-indigo-700">🔄 授業変更</div>
             </label>
           </div>
         </div>
 
         <!-- 日付 -->
         <div>
-          <label class="block text-xs font-bold text-slate-600 mb-1">日付 <span class="text-red-500">*</span></label>
-          <input type="date" id="formDate" required class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+          <label class="block text-xs font-bold text-slate-600 mb-1">日付</label>
+          <input type="date" id="formDate" required class="w-full px-3 py-2 border rounded-xl text-sm">
         </div>
 
-        <!-- 科目選択 (小テスト用) -->
-        <div id="singleSubjectGroup">
-          <label class="block text-xs font-bold text-slate-600 mb-1">科目名 <span class="text-red-500">*</span></label>
-          <select id="formSubject" class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
-            <!-- JSで動的に選択肢生成 -->
-          </select>
+        <!-- 小テスト用 教科選択 -->
+        <div id="singleSubjectArea">
+          <label class="block text-xs font-bold text-slate-600 mb-1">科目名</label>
+          <select id="formSubject" class="w-full px-3 py-2 border rounded-xl text-sm bg-white"></select>
         </div>
 
-        <!-- 科目選択 (授業変更用: 変更前 -> 変更後) -->
-        <div id="changeSubjectGroup" class="hidden">
-          <label class="block text-xs font-bold text-slate-600 mb-1">教科の変更 <span class="text-red-500">*</span></label>
+        <!-- 授業変更用 教科選択 (変更前 -> 変更後) -->
+        <div id="doubleSubjectArea" class="hidden">
+          <label class="block text-xs font-bold text-slate-600 mb-1">教科の変更</label>
           <div class="flex items-center space-x-2">
             <div class="flex-1">
-              <span class="text-[10px] text-slate-400 block mb-0.5">変更前</span>
-              <select id="formSubjectFrom" class="w-full px-2.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                <!-- JS生成 -->
-              </select>
+              <span class="text-[10px] text-slate-400 block">変更前</span>
+              <select id="formSubjectFrom" class="w-full px-2 py-2 border rounded-xl text-xs bg-white"></select>
             </div>
-            <i class="fa-solid fa-arrow-right text-slate-400 mt-4"></i>
+            <i class="fa-solid fa-arrow-right text-slate-400 mt-3 text-xs"></i>
             <div class="flex-1">
-              <span class="text-[10px] text-slate-400 block mb-0.5">変更後</span>
-              <select id="formSubjectTo" class="w-full px-2.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                <!-- JS生成 -->
-              </select>
+              <span class="text-[10px] text-slate-400 block">変更後</span>
+              <select id="formSubjectTo" class="w-full px-2 py-2 border rounded-xl text-xs bg-white"></select>
             </div>
           </div>
         </div>
 
         <!-- 内容 -->
         <div>
-          <label class="block text-xs font-bold text-slate-600 mb-1">内容 / 範囲 <span class="text-red-500">*</span></label>
-          <textarea id="formContent" rows="3" required placeholder="例: P.24~30 単語テスト / 持ち物: 柔道着" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
+          <label class="block text-xs font-bold text-slate-600 mb-1">内容 / 範囲</label>
+          <textarea id="formContent" rows="3" required placeholder="例: P.10〜15の単語テスト" class="w-full px-3 py-2 border rounded-xl text-sm"></textarea>
         </div>
 
         <!-- 登録者名 -->
         <div>
-          <label class="block text-xs font-bold text-slate-600 mb-1">登録者名 <span class="text-red-500">*</span></label>
-          <input type="text" id="formAuthor" required placeholder="例: 山田" class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+          <label class="block text-xs font-bold text-slate-600 mb-1">登録者名</label>
+          <input type="text" id="formAuthor" required placeholder="例: 山田" class="w-full px-3 py-2 border rounded-xl text-sm">
         </div>
 
-        <!-- Submit Button -->
-        <div class="pt-2 flex space-x-2">
-          <button type="button" onclick="closeFormModal()" class="flex-1 py-3 bg-slate-100 text-slate-600 font-bold text-sm rounded-xl hover:bg-slate-200 transition">
-            キャンセル
-          </button>
-          <button type="submit" id="saveBtn" class="flex-1 py-3 bg-indigo-600 text-white font-bold text-sm rounded-xl hover:bg-indigo-700 transition shadow-md">
-            保存する
-          </button>
-        </div>
+        <button type="submit" class="w-full py-3 bg-indigo-600 text-white font-bold text-sm rounded-xl shadow-md hover:bg-indigo-700 transition">
+          保存する
+        </button>
       </form>
     </div>
   </div>
 
-  <!-- MODAL 2: Supabase 設定モーダル -->
-  <div id="settingsModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-    <div class="bg-white w-full max-w-md rounded-2xl shadow-xl p-5 space-y-4">
-      <div class="flex items-center justify-between border-b pb-3">
-        <h3 class="font-bold text-slate-800 flex items-center gap-2">
-          <i class="fa-solid fa-sliders text-indigo-600"></i> Supabase連携設定
-        </h3>
-        <button onclick="closeSettingsModal()" class="text-slate-400 hover:text-slate-600">
-          <i class="fa-solid fa-xmark text-lg"></i>
-        </button>
+  <!-- 設定モーダル (Supabase設定) -->
+  <div id="settingsModal" class="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+    <div class="bg-white w-full max-w-sm rounded-2xl p-5 shadow-xl space-y-3">
+      <div class="flex justify-between items-center border-b pb-2">
+        <h3 class="font-bold text-slate-800 text-sm">Supabase連携設定</h3>
+        <button onclick="closeSettings()" class="text-slate-400"><i class="fa-solid fa-xmark"></i></button>
       </div>
-
-      <p class="text-xs text-slate-500 leading-relaxed">
-        Supabaseのプロジェクト設定画面から取得した「Project URL」と「Anon Key」を入力してください。
-      </p>
-
-      <div class="space-y-3">
-        <div>
-          <label class="block text-xs font-bold text-slate-600 mb-1">Supabase Project URL</label>
-          <input type="url" id="settingUrl" placeholder="https://xxxx.supabase.co" class="w-full px-3 py-2 bg-slate-50 border rounded-xl text-xs font-mono">
-        </div>
-        <div>
-          <label class="block text-xs font-bold text-slate-600 mb-1">Supabase Anon Key</label>
-          <input type="password" id="settingKey" placeholder="eyJhbGciOi..." class="w-full px-3 py-2 bg-slate-50 border rounded-xl text-xs font-mono">
-        </div>
+      <div>
+        <label class="block text-[11px] font-bold text-slate-600 mb-0.5">Project URL</label>
+        <input type="text" id="cfgUrl" class="w-full px-2.5 py-1.5 border rounded-lg text-xs font-mono">
       </div>
-
-      <div class="flex space-x-2 pt-2">
-        <button onclick="saveSettings()" class="w-full py-2.5 bg-indigo-600 text-white font-bold text-xs rounded-xl hover:bg-indigo-700">
-          設定を保存して再接続
-        </button>
+      <div>
+        <label class="block text-[11px] font-bold text-slate-600 mb-0.5">Anon Key</label>
+        <input type="password" id="cfgKey" class="w-full px-2.5 py-1.5 border rounded-lg text-xs font-mono">
       </div>
+      <button onclick="saveSettings()" class="w-full py-2 bg-indigo-600 text-white font-bold text-xs rounded-xl">
+        保存して再接続
+      </button>
     </div>
   </div>
 
   <script>
-    // --------------------------------------------------
-    // 教科リスト定義
-    // --------------------------------------------------
-    const SUBJECT_LIST = [
+    // 教科リスト
+    const SUBJECTS = [
       '国語', '現代の国語', '言語文化', '論理国語',
       '数学I', '数学A', '数学II', '数学B', '数学III', '数学C',
       '英語', '英語コミュニケーション', '論理・表現',
-      '物理', '化学', '生物', '地学', '科学と人間生活',
+      '物理', '化学', '生物', '地学',
       '歴史総合', '日本史', '世界史', '地理総合', '公共', '倫理', '政治・経済',
-      '情報', '情報I', '保健体育', '音楽', '美術', '家庭科', 'その他'
+      '情報I', '保健体育', '音楽', '美術', '家庭科', 'その他'
     ];
 
-    // --------------------------------------------------
-    // 設定の初期化 (Supabase credentials)
-    // --------------------------------------------------
     let SUPABASE_URL = localStorage.getItem('cfg_sp_url') || '';
     let SUPABASE_ANON_KEY = localStorage.getItem('cfg_sp_key') || '';
     let supabaseClient = null;
 
-    // アプリ状態
     let schedules = [];
-    let currentFilter = 'ALL';
-    let currentView = 'list'; // 'list' or 'calendar'
-    let currentDate = new Date(); // カレンダー表示中の年月
+    let activeFilter = 'all';
+    let currentViewMode = 'list';
+    let calDate = new Date();
 
-    // PWA Manifest 動的生成
-    const manifestData = {
-      "name": "授業・テスト管理",
+    // PWA Manifest
+    const manifest = {
+      "name": "授業変更・小テスト",
       "short_name": "授業変更",
       "start_url": "./",
       "display": "standalone",
-      "background_color": "#f8fafc",
+      "background_color": "#f1f5f9",
       "theme_color": "#4f46e5",
       "icons": [{
         "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%234f46e5'/><text x='50' y='65' font-size='50' text-anchor='middle' fill='white'>📅</text></svg>",
@@ -314,85 +236,63 @@
         "type": "image/svg+xml"
       }]
     };
-    document.getElementById('manifest-placeholder').setAttribute('href', 'data:application/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(manifestData)));
+    document.getElementById('manifest-placeholder').setAttribute('href', 'data:application/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(manifest)));
 
-    // --------------------------------------------------
-    // 初期化処理
-    // --------------------------------------------------
     window.addEventListener('DOMContentLoaded', () => {
-      populateSubjectDropdowns();
+      initDropdowns();
       initSupabase();
-      renderCalendar();
     });
 
-    // 教科ドロップダウンの選択肢生成
-    function populateSubjectDropdowns() {
-      const singleSelect = document.getElementById('formSubject');
-      const fromSelect = document.getElementById('formSubjectFrom');
-      const toSelect = document.getElementById('formSubjectTo');
-
-      const optionsHtml = SUBJECT_LIST.map(s => `<option value="${s}">${s}</option>`).join('');
-      
-      singleSelect.innerHTML = optionsHtml;
-      fromSelect.innerHTML = optionsHtml;
-      toSelect.innerHTML = optionsHtml;
+    function initDropdowns() {
+      const opts = SUBJECTS.map(s => `<option value="${s}">${s}</option>`).join('');
+      document.getElementById('formSubject').innerHTML = opts;
+      document.getElementById('formSubjectFrom').innerHTML = opts;
+      document.getElementById('formSubjectTo').innerHTML = opts;
     }
 
-    // Supabase クライアント初期化
     function initSupabase() {
       const banner = document.getElementById('statusBanner');
-      const statusMsg = document.getElementById('statusMessage');
+      const text = document.getElementById('statusText');
 
       if (SUPABASE_URL && SUPABASE_ANON_KEY && window.supabase) {
         try {
           supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-          banner.className = 'mb-4 p-3 text-xs rounded-xl flex items-center justify-between bg-emerald-50 text-emerald-800 border border-emerald-200';
-          statusMsg.innerHTML = '<i class="fa-solid fa-cloud-check mr-1 text-emerald-600"></i> Supabaseと接続中';
-          fetchSchedules();
+          banner.className = 'mb-4 p-2.5 text-xs rounded-xl flex justify-between items-center bg-emerald-50 text-emerald-800 border-emerald-200';
+          text.innerHTML = '<i class="fa-solid fa-cloud-check mr-1 text-emerald-600"></i> Supabase接続完了';
+          loadSchedules();
           return;
-        } catch (e) {
-          console.error(e);
-        }
+        } catch(e) { console.error(e); }
       }
 
-      // Supabase設定がない場合はローカルストレージ（デモモード）
-      banner.className = 'mb-4 p-3 text-xs rounded-xl flex items-center justify-between bg-amber-50 text-amber-800 border border-amber-200';
-      statusMsg.innerHTML = '<i class="fa-solid fa-hard-drive mr-1 text-amber-600"></i> ローカル保存モード（Supabase未設定）';
+      banner.className = 'mb-4 p-2.5 text-xs rounded-xl flex justify-between items-center bg-amber-50 text-amber-800 border-amber-200';
+      text.innerHTML = '<i class="fa-solid fa-hard-drive mr-1 text-amber-600"></i> ローカルモード (Supabase未接続)';
       loadLocalSchedules();
     }
 
-    // --------------------------------------------------
-    // データ取得 (Read)
-    // --------------------------------------------------
-    async function fetchSchedules() {
+    async function loadSchedules() {
       if (!supabaseClient) return;
-
       try {
         const { data, error } = await supabaseClient
           .from('schedule_items')
           .select('*')
           .order('date', { ascending: true });
-
         if (error) throw error;
-
         schedules = data || [];
         render();
       } catch (err) {
-        console.error('Fetch Error:', err);
-        showNotification('データの取得に失敗しました。', 'error');
+        console.error(err);
         loadLocalSchedules();
       }
     }
 
     function loadLocalSchedules() {
-      const local = localStorage.getItem('demo_schedules');
+      const local = localStorage.getItem('demo_data');
       if (local) {
         schedules = JSON.parse(local);
       } else {
-        // サンプルデータ
         schedules = [
-          { id: '1', date: getTodayStr(), type: '小テスト', subject: '英語コミュニケーション', content: '単語テスト Lesson 4 (P.40-45)', author: '係' },
-          { id: '2', date: getTodayStr(), type: '授業変更', subject: '数学I → 物理', content: '体育館行事のため変更。ノート持参', author: '担任' }
+          { id: '1', date: getTodayStr(), type: '小テスト', subject: '英語コミュニケーション', content: '単語テスト Lesson 4', author: '係' },
+          { id: '2', date: getTodayStr(), type: '授業変更', subject: '数学I → 物理', content: '体育館行事のため変更', author: '担任' }
         ];
         saveLocalSchedules();
       }
@@ -400,13 +300,11 @@
     }
 
     function saveLocalSchedules() {
-      localStorage.setItem('demo_schedules', JSON.stringify(schedules));
+      localStorage.setItem('demo_data', JSON.stringify(schedules));
     }
 
-    // --------------------------------------------------
-    // フォーム送信 (Create / Update)
-    // --------------------------------------------------
-    async function handleFormSubmit(e) {
+    // 保存・更新処理
+    async function saveSchedule(e) {
       e.preventDefault();
 
       const editId = document.getElementById('editId').value;
@@ -424,408 +322,308 @@
         subject = `${from} → ${to}`;
       }
 
-      if (!date || !subject || !content || !author) {
-        alert('すべての項目を入力してください');
-        return;
-      }
-
-      const payload = { date, type, subject, content, author };
+      const item = { date, type, subject, content, author };
 
       if (supabaseClient) {
         try {
           if (editId) {
-            // 更新 (Update)
-            const { error } = await supabaseClient
-              .from('schedule_items')
-              .update(payload)
-              .eq('id', editId);
+            const { error } = await supabaseClient.from('schedule_items').update(item).eq('id', editId);
             if (error) throw error;
-            showNotification('更新しました！');
           } else {
-            // 追加 (Create)
-            const { error } = await supabaseClient
-              .from('schedule_items')
-              .insert([payload]);
+            const { error } = await supabaseClient.from('schedule_items').insert([item]);
             if (error) throw error;
-            showNotification('追加しました！');
           }
-          fetchSchedules();
+          loadSchedules();
         } catch (err) {
-          console.error(err);
-          alert('保存に失敗しました: ' + err.message);
+          alert('保存できませんでした: ' + err.message);
         }
       } else {
-        // ローカル保存
         if (editId) {
-          schedules = schedules.map(item => item.id === editId ? { ...item, ...payload } : item);
+          schedules = schedules.map(s => s.id === editId ? { ...s, ...item } : s);
         } else {
-          payload.id = Date.now().toString();
-          schedules.push(payload);
+          item.id = Date.now().toString();
+          schedules.push(item);
         }
         saveLocalSchedules();
         render();
-        showNotification('ローカルに保存しました！');
       }
 
-      closeFormModal();
+      closeModal();
     }
 
-    // --------------------------------------------------
-    // 削除 (Delete)
-    // --------------------------------------------------
-    async function deleteSchedule(id) {
-      if (!confirm('この予定を削除してもよろしいですか？')) return;
+    // 削除
+    async function deleteItem(id) {
+      if (!confirm('本当に削除しますか？')) return;
 
       if (supabaseClient) {
         try {
-          const { error } = await supabaseClient
-            .from('schedule_items')
-            .delete()
-            .eq('id', id);
+          const { error } = await supabaseClient.from('schedule_items').delete().eq('id', id);
           if (error) throw error;
-          showNotification('削除しました');
-          fetchSchedules();
+          loadSchedules();
         } catch (err) {
-          console.error(err);
-          alert('削除に失敗しました: ' + err.message);
+          alert('削除できませんでした: ' + err.message);
         }
       } else {
-        schedules = schedules.filter(item => item.id !== id);
+        schedules = schedules.filter(s => s.id !== id);
         saveLocalSchedules();
         render();
-        showNotification('削除しました');
       }
     }
 
-    // --------------------------------------------------
-    // 編集モーダルを開く
-    // --------------------------------------------------
+    // 編集モーダル開く
     function openEditModal(id) {
       const item = schedules.find(s => s.id === id);
       if (!item) return;
 
       document.getElementById('editId').value = item.id;
-      document.getElementById('modalTitle').innerHTML = '<i class="fa-solid fa-pen-to-square text-indigo-600"></i> 予定を編集';
+      document.getElementById('modalTitle').textContent = '予定を編集';
       document.getElementById('formDate').value = item.date;
       document.getElementById('formContent').value = item.content;
       document.getElementById('formAuthor').value = item.author;
 
-      // タイプラジオ選択
-      const typeRadios = document.getElementsByName('formType');
-      for (let r of typeRadios) {
-        r.checked = (r.value === item.type);
-      }
-      toggleTypeFields();
+      const radios = document.getElementsByName('formType');
+      for (let r of radios) r.checked = (r.value === item.type);
+      toggleTypeUI();
 
-      // 教科のセット
       if (item.type === '小テスト') {
         document.getElementById('formSubject').value = item.subject;
       } else if (item.subject.includes('→')) {
         const parts = item.subject.split('→').map(s => s.trim());
-        document.getElementById('formSubjectFrom').value = parts[0] || SUBJECT_LIST[0];
-        document.getElementById('formSubjectTo').value = parts[1] || SUBJECT_LIST[0];
+        document.getElementById('formSubjectFrom').value = parts[0] || SUBJECTS[0];
+        document.getElementById('formSubjectTo').value = parts[1] || SUBJECTS[0];
       }
 
       document.getElementById('formModal').classList.remove('hidden');
     }
 
-    // --------------------------------------------------
-    // 画面レンダリング (List & Calendar & Counts)
-    // --------------------------------------------------
+    // レンダリング統合
     function render() {
-      // カウント更新
-      const quizCount = schedules.filter(s => s.type === '小テスト').length;
-      const changeCount = schedules.filter(s => s.type === '授業変更').length;
-      document.getElementById('countALL').textContent = schedules.length;
-      document.getElementById('countQuiz').textContent = quizCount;
-      document.getElementById('countChange').textContent = changeCount;
-
       renderList();
       renderCalendar();
     }
 
+    // リスト描画
     function renderList() {
-      const container = document.getElementById('scheduleContainer');
-      const emptyState = document.getElementById('emptyState');
-      container.innerHTML = '';
+      const listEl = document.getElementById('scheduleList');
+      const emptyEl = document.getElementById('emptyList');
+      listEl.innerHTML = '';
 
-      // 絞り込み
-      let filtered = schedules;
-      if (currentFilter !== 'ALL') {
-        filtered = schedules.filter(s => s.type === currentFilter);
+      let list = schedules;
+      if (activeFilter !== 'all') {
+        list = schedules.filter(s => s.type === activeFilter);
       }
 
-      // 日付順ソート
-      filtered.sort((a, b) => new Date(a.date) - new Date(b.date));
+      list.sort((a, b) => new Date(a.date) - new Date(b.date));
 
-      if (filtered.length === 0) {
-        emptyState.classList.remove('hidden');
+      if (list.length === 0) {
+        emptyEl.classList.remove('hidden');
         return;
       }
-      emptyState.classList.add('hidden');
+      emptyEl.classList.add('hidden');
 
-      filtered.forEach(item => {
+      list.forEach(item => {
         const isQuiz = item.type === '小テスト';
-        const badgeColor = isQuiz ? 'bg-amber-100 text-amber-800 border-amber-200' : 'bg-indigo-100 text-indigo-800 border-indigo-200';
-        const icon = isQuiz ? '📝' : '🔄';
+        const badgeStyle = isQuiz ? 'bg-amber-100 text-amber-800' : 'bg-indigo-100 text-indigo-800';
 
         const card = document.createElement('div');
-        card.className = 'bg-white rounded-2xl p-4 shadow-sm border border-slate-200/80 hover:shadow-md transition flex flex-col justify-between space-y-3';
-        
+        card.className = 'bg-white rounded-2xl p-4 shadow-sm border border-slate-200 space-y-2';
         card.innerHTML = `
-          <div class="flex items-start justify-between">
+          <div class="flex justify-between items-center">
             <div class="flex items-center space-x-2">
-              <span class="px-2.5 py-1 text-xs font-bold rounded-lg border ${badgeColor}">
-                ${icon} ${item.type}
+              <span class="px-2 py-0.5 text-xs font-bold rounded-md ${badgeStyle}">
+                ${isQuiz ? '📝' : '🔄'} ${item.type}
               </span>
-              <span class="text-xs font-bold text-slate-500">
-                <i class="fa-regular fa-calendar mr-1"></i>${formatDate(item.date)}
-              </span>
+              <span class="text-xs font-bold text-slate-500">${formatDate(item.date)}</span>
             </div>
-            <div class="flex items-center space-x-1">
-              <button onclick="openEditModal('${item.id}')" class="p-1.5 text-slate-400 hover:text-indigo-600 rounded-lg hover:bg-slate-100 transition">
-                <i class="fa-solid fa-pen-to-square"></i>
+            <div class="flex items-center space-x-2">
+              <button onclick="openEditModal('${item.id}')" class="text-slate-400 hover:text-indigo-600 text-xs">
+                <i class="fa-solid fa-pen"></i>
               </button>
-              <button onclick="deleteSchedule('${item.id}')" class="p-1.5 text-slate-400 hover:text-red-600 rounded-lg hover:bg-slate-100 transition">
+              <button onclick="deleteItem('${item.id}')" class="text-slate-400 hover:text-red-500 text-xs">
                 <i class="fa-regular fa-trash-can"></i>
               </button>
             </div>
           </div>
-
-          <div>
-            <h3 class="font-bold text-slate-800 text-base mb-1">${escapeHtml(item.subject)}</h3>
-            <p class="text-xs text-slate-600 whitespace-pre-wrap bg-slate-50 p-2.5 rounded-xl border border-slate-100">${escapeHtml(item.content)}</p>
-          </div>
-
-          <div class="flex justify-end items-center text-[11px] text-slate-400 font-medium">
-            <span>登録: ${escapeHtml(item.author)}</span>
-          </div>
+          <h3 class="font-bold text-slate-800 text-sm">${escapeHtml(item.subject)}</h3>
+          <p class="text-xs text-slate-600 bg-slate-50 p-2 rounded-xl whitespace-pre-wrap">${escapeHtml(item.content)}</p>
+          <div class="text-right text-[10px] text-slate-400">登録: ${escapeHtml(item.author)}</div>
         `;
-
-        container.appendChild(card);
+        listEl.appendChild(card);
       });
     }
 
-    // --------------------------------------------------
-    // カレンダー表示処理
-    // --------------------------------------------------
+    // カレンダー描画
     function renderCalendar() {
-      const year = currentDate.getFullYear();
-      const month = currentDate.getMonth();
+      const year = calDate.getFullYear();
+      const month = calDate.getMonth();
 
-      document.getElementById('calendarMonthTitle').textContent = `${year}年 ${month + 1}月`;
+      document.getElementById('calMonthTitle').textContent = `${year}年 ${month + 1}月`;
 
-      const firstDay = new Date(year, month, 1);
-      const lastDay = new Date(year, month + 1, 0);
-      const prevLastDay = new Date(year, month, 0);
-
-      const startDayOfWeek = firstDay.getDay(); // 0 = Sun
-      const totalDays = lastDay.getDate();
+      const firstDay = new Date(year, month, 1).getDay();
+      const totalDays = new Date(year, month + 1, 0).getDate();
+      const prevTotalDays = new Date(year, month, 0).getDate();
 
       const grid = document.getElementById('calendarGrid');
       grid.innerHTML = '';
 
       const todayStr = getTodayStr();
 
-      // 前月埋め
-      for (let i = startDayOfWeek - 1; i >= 0; i--) {
-        const d = prevLastDay.getDate() - i;
+      // 前月補填
+      for (let i = firstDay - 1; i >= 0; i--) {
+        const d = prevTotalDays - i;
         grid.appendChild(createCalCell(d, true));
       }
 
-      // 当月の日付
+      // 当月
       for (let day = 1; day <= totalDays; day++) {
         const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-        const isToday = (dateStr === todayStr);
+        let items = schedules.filter(s => s.date === dateStr);
+        if (activeFilter !== 'all') items = items.filter(s => s.type === activeFilter);
 
-        // この日の予定抽出
-        let dayItems = schedules.filter(s => s.date === dateStr);
-        if (currentFilter !== 'ALL') {
-          dayItems = dayItems.filter(s => s.type === currentFilter);
-        }
-
-        const cell = createCalCell(day, false, isToday, dayItems, dateStr);
-        grid.appendChild(cell);
+        grid.appendChild(createCalCell(day, false, dateStr === todayStr, items, dateStr));
       }
 
-      // 翌月埋め
-      const remainingCells = 42 - grid.children.length; // 6行維持
-      for (let i = 1; i <= remainingCells; i++) {
+      // 翌月補填
+      const pad = 35 - grid.children.length;
+      for (let i = 1; i <= pad; i++) {
         grid.appendChild(createCalCell(i, true));
       }
     }
 
-    function createCalCell(day, isOtherMonth, isToday = false, items = [], dateStr = '') {
-      const div = document.createElement('div');
-      div.className = `min-h-[70px] p-1 border border-slate-100 rounded-xl flex flex-col justify-between text-xs transition ${
-        isOtherMonth ? 'bg-slate-50/50 text-slate-300' : 'bg-white text-slate-700 hover:border-indigo-200 cursor-pointer'
-      } ${isToday ? 'ring-2 ring-indigo-500 bg-indigo-50/30' : ''}`;
+    function createCalCell(day, isOther, isToday = false, items = [], dateStr = '') {
+      const cell = document.createElement('div');
+      cell.className = `min-h-[56px] p-1 border rounded-xl flex flex-col justify-between text-xs ${
+        isOther ? 'bg-slate-50 text-slate-300 border-slate-100' : 'bg-white text-slate-700 border-slate-200 cursor-pointer hover:border-indigo-300'
+      } ${isToday ? 'ring-2 ring-indigo-500 bg-indigo-50/20' : ''}`;
 
-      if (!isOtherMonth) {
-        div.onclick = () => {
-          openFormModal(dateStr);
-        };
+      if (!isOther) {
+        cell.onclick = () => openModal(dateStr);
       }
 
-      let itemsHtml = '';
+      let badgeHtml = '';
       if (items.length > 0) {
-        itemsHtml = '<div class="space-y-1 mt-1">';
+        badgeHtml = '<div class="space-y-0.5 mt-0.5">';
         items.slice(0, 2).forEach(it => {
-          const isQuiz = it.type === '小テスト';
-          const bg = isQuiz ? 'bg-amber-100 text-amber-800' : 'bg-indigo-100 text-indigo-800';
-          itemsHtml += `<div class="text-[9px] px-1 py-0.5 rounded font-bold truncate ${bg}">${escapeHtml(it.subject)}</div>`;
+          const bg = it.type === '小テスト' ? 'bg-amber-100 text-amber-800' : 'bg-indigo-100 text-indigo-800';
+          badgeHtml += `<div class="text-[8px] px-1 py-0.5 rounded font-bold truncate ${bg}">${escapeHtml(it.subject)}</div>`;
         });
-        if (items.length > 2) {
-          itemsHtml += `<div class="text-[8px] text-slate-400 font-bold text-center">+${items.length - 2}件</div>`;
-        }
-        itemsHtml += '</div>';
+        if (items.length > 2) badgeHtml += `<div class="text-[8px] text-slate-400 text-center">+${items.length - 2}</div>`;
+        badgeHtml += '</div>';
       }
 
-      div.innerHTML = `
-        <div class="flex justify-between items-center">
-          <span class="font-bold ${isToday ? 'text-indigo-600' : ''}">${day}</span>
-        </div>
-        ${itemsHtml}
+      cell.innerHTML = `
+        <div class="font-bold ${isToday ? 'text-indigo-600' : ''}">${day}</div>
+        ${badgeHtml}
       `;
-
-      return div;
+      return cell;
     }
 
-    // カレンダー月移動
-    function changeMonth(delta) {
-      currentDate.setMonth(currentDate.getMonth() + delta);
+    function changeMonth(dir) {
+      calDate.setMonth(calDate.getMonth() + dir);
       renderCalendar();
     }
 
-    function resetToCurrentMonth() {
-      currentDate = new Date();
-      renderCalendar();
-    }
-
-    // --------------------------------------------------
-    // UI モード & フィルター切替
-    // --------------------------------------------------
-    function setViewMode(mode) {
-      currentView = mode;
+    // 表示モード切替
+    function toggleView(mode) {
+      currentViewMode = mode;
       const listBtn = document.getElementById('viewListBtn');
       const calBtn = document.getElementById('viewCalBtn');
       const listView = document.getElementById('listView');
       const calView = document.getElementById('calendarView');
 
       if (mode === 'list') {
-        listBtn.className = 'px-2.5 py-1 rounded-md transition-colors bg-white text-indigo-700 shadow-sm';
-        calBtn.className = 'px-2.5 py-1 rounded-md transition-colors text-indigo-100 hover:text-white';
+        listBtn.className = 'px-2.5 py-1 rounded-md bg-white text-indigo-700 font-bold shadow-sm transition';
+        calBtn.className = 'px-2.5 py-1 rounded-md text-indigo-100 font-medium transition';
         listView.classList.remove('hidden');
         calView.classList.add('hidden');
       } else {
-        calBtn.className = 'px-2.5 py-1 rounded-md transition-colors bg-white text-indigo-700 shadow-sm';
-        listBtn.className = 'px-2.5 py-1 rounded-md transition-colors text-indigo-100 hover:text-white';
+        calBtn.className = 'px-2.5 py-1 rounded-md bg-white text-indigo-700 font-bold shadow-sm transition';
+        listBtn.className = 'px-2.5 py-1 rounded-md text-indigo-100 font-medium transition';
         calView.classList.remove('hidden');
         listView.classList.add('hidden');
         renderCalendar();
       }
     }
 
+    // フィルター選択
     function setFilter(filter) {
-      currentFilter = filter;
-      ['ALL', 'Quiz', 'Change'].forEach(key => {
-        const btn = document.getElementById('tab' + key);
-        const targetType = key === 'Quiz' ? '小テスト' : (key === 'Change' ? '授業変更' : 'ALL');
-        
-        if (targetType === filter) {
-          btn.className = 'flex-1 py-2 text-sm font-bold rounded-lg transition-all text-indigo-600 bg-indigo-50 shadow-sm';
+      activeFilter = filter;
+      ['all', 'quiz', 'change'].forEach(key => {
+        const btn = document.getElementById('tab-' + key);
+        const match = (key === 'all' && filter === 'all') || 
+                      (key === 'quiz' && filter === '小テスト') || 
+                      (key === 'change' && filter === '授業変更');
+        if (match) {
+          btn.className = 'flex-1 py-2 rounded-lg bg-indigo-50 text-indigo-600 transition';
         } else {
-          btn.className = 'flex-1 py-2 text-sm font-medium text-slate-500 rounded-lg transition-all hover:text-slate-800';
+          btn.className = 'flex-1 py-2 rounded-lg hover:text-slate-800 transition';
         }
       });
-
       render();
     }
 
-    function toggleTypeFields() {
+    function toggleTypeUI() {
       const type = document.querySelector('input[name="formType"]:checked').value;
-      const singleGroup = document.getElementById('singleSubjectGroup');
-      const changeGroup = document.getElementById('changeSubjectGroup');
-
       if (type === '小テスト') {
-        singleGroup.classList.remove('hidden');
-        changeGroup.classList.add('hidden');
+        document.getElementById('singleSubjectArea').classList.remove('hidden');
+        document.getElementById('doubleSubjectArea').classList.add('hidden');
       } else {
-        singleGroup.classList.add('hidden');
-        changeGroup.classList.remove('hidden');
+        document.getElementById('singleSubjectArea').classList.add('hidden');
+        document.getElementById('doubleSubjectArea').classList.remove('hidden');
       }
     }
 
-    // モーダル表示制御
-    function openFormModal(presetDate = '') {
+    // モーダル関連
+    function openModal(presetDate = '') {
       document.getElementById('editId').value = '';
-      document.getElementById('modalTitle').innerHTML = '<i class="fa-solid fa-pen-to-square text-indigo-600"></i> 予定を追加';
+      document.getElementById('modalTitle').textContent = '予定を追加';
       document.getElementById('scheduleForm').reset();
       document.getElementById('formDate').value = presetDate || getTodayStr();
-      toggleTypeFields();
-
+      toggleTypeUI();
       document.getElementById('formModal').classList.remove('hidden');
     }
 
-    function closeFormModal() {
+    function closeModal() {
       document.getElementById('formModal').classList.add('hidden');
     }
 
-    function openSettingsModal() {
-      document.getElementById('settingUrl').value = SUPABASE_URL;
-      document.getElementById('settingKey').value = SUPABASE_ANON_KEY;
+    function openSettings() {
+      document.getElementById('cfgUrl').value = SUPABASE_URL;
+      document.getElementById('cfgKey').value = SUPABASE_ANON_KEY;
       document.getElementById('settingsModal').classList.remove('hidden');
     }
 
-    function closeSettingsModal() {
+    function closeSettings() {
       document.getElementById('settingsModal').classList.add('hidden');
     }
 
     function saveSettings() {
-      const url = document.getElementById('settingUrl').value.trim();
-      const key = document.getElementById('settingKey').value.trim();
-
-      localStorage.setItem('cfg_sp_url', url);
-      localStorage.setItem('cfg_sp_key', key);
-      SUPABASE_URL = url;
-      SUPABASE_ANON_KEY = key;
-
-      closeSettingsModal();
+      const u = document.getElementById('cfgUrl').value.trim();
+      const k = document.getElementById('cfgKey').value.trim();
+      localStorage.setItem('cfg_sp_url', u);
+      localStorage.setItem('cfg_sp_key', k);
+      SUPABASE_URL = u;
+      SUPABASE_ANON_KEY = k;
+      closeSettings();
       initSupabase();
     }
 
-    // --------------------------------------------------
     // ユーティリティ
-    // --------------------------------------------------
     function getTodayStr() {
-      const now = new Date();
-      return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+      const d = new Date();
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
     }
 
-    function formatDate(dateStr) {
-      if (!dateStr) return '';
-      const [y, m, d] = dateStr.split('-');
+    function formatDate(str) {
+      if (!str) return '';
+      const [y, m, d] = str.split('-');
       const date = new Date(y, m - 1, d);
-      const dayOfWeek = ['日', '月', '火', '水', '木', '金', '土'][date.getDay()];
-      return `${parseInt(m)}/${parseInt(d)}(${dayOfWeek})`;
+      const dayStr = ['日', '月', '火', '水', '木', '金', '土'][date.getDay()];
+      return `${parseInt(m)}/${parseInt(d)}(${dayStr})`;
     }
 
-    function escapeHtml(str) {
-      return (str || '').replace(/[&<>"']/g, function(m) {
-        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[m];
-      });
-    }
-
-    function showNotification(msg) {
-      const div = document.createElement('div');
-      div.className = 'fixed top-4 right-4 bg-slate-800 text-white text-xs px-4 py-2.5 rounded-xl shadow-xl z-50 transition-all transform duration-300 translate-y-0 opacity-100';
-      div.innerHTML = `<i class="fa-solid fa-circle-check text-emerald-400 mr-2"></i>${msg}`;
-      document.body.appendChild(div);
-      setTimeout(() => {
-        div.style.opacity = '0';
-        div.style.transform = 'translateY(-10px)';
-        setTimeout(() => div.remove(), 300);
-      }, 2000);
+    function escapeHtml(s) {
+      return (s || '').replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[m]));
     }
   </script>
 </body>
