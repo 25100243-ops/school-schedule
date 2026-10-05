@@ -181,30 +181,52 @@
     </div>
   </div>
 
-  <!-- 設定モーダル (Supabase設定) -->
+  <!-- 設定モーダル (Supabase設定 & 教科管理) -->
   <div id="settingsModal" class="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
-    <div class="bg-white w-full max-w-sm rounded-2xl p-5 shadow-xl space-y-3">
+    <div class="bg-white w-full max-w-sm rounded-2xl p-5 shadow-xl space-y-4 max-h-[90vh] overflow-y-auto">
       <div class="flex justify-between items-center border-b pb-2">
-        <h3 class="font-bold text-slate-800 text-sm">Supabase連携設定</h3>
+        <h3 class="font-bold text-slate-800 text-sm">設定</h3>
         <button onclick="closeSettings()" class="text-slate-400"><i class="fa-solid fa-xmark"></i></button>
       </div>
-      <div>
-        <label class="block text-[11px] font-bold text-slate-600 mb-0.5">Project URL</label>
-        <input type="text" id="cfgUrl" class="w-full px-2.5 py-1.5 border rounded-lg text-xs font-mono">
+
+      <!-- 1. 教科管理セクション -->
+      <div class="space-y-2">
+        <label class="block text-xs font-bold text-slate-700">📚 教科の管理</label>
+        <div id="subjectTagList" class="flex flex-wrap gap-1.5 p-2 bg-slate-50 border border-slate-200 rounded-xl max-h-36 overflow-y-auto">
+          <!-- 教科タグがJSで動的に表示されます -->
+        </div>
+        <div class="flex space-x-1.5 pt-1">
+          <input type="text" id="newSubjectInput" placeholder="新しい教科名" class="flex-1 px-2.5 py-1.5 border rounded-lg text-xs">
+          <button type="button" onclick="addSubject()" class="px-3 py-1.5 bg-slate-800 text-white font-bold text-xs rounded-lg hover:bg-slate-700 transition">
+            追加
+          </button>
+        </div>
       </div>
-      <div>
-        <label class="block text-[11px] font-bold text-slate-600 mb-0.5">Anon Key</label>
-        <input type="password" id="cfgKey" class="w-full px-2.5 py-1.5 border rounded-lg text-xs font-mono">
+
+      <hr class="border-slate-100">
+
+      <!-- 2. Supabase設定セクション -->
+      <div class="space-y-2">
+        <label class="block text-xs font-bold text-slate-700">⚡ Supabase連携設定</label>
+        <div>
+          <label class="block text-[10px] text-slate-500 mb-0.5">Project URL</label>
+          <input type="text" id="cfgUrl" class="w-full px-2.5 py-1.5 border rounded-lg text-xs font-mono">
+        </div>
+        <div>
+          <label class="block text-[10px] text-slate-500 mb-0.5">Anon Key</label>
+          <input type="password" id="cfgKey" class="w-full px-2.5 py-1.5 border rounded-lg text-xs font-mono">
+        </div>
       </div>
-      <button onclick="saveSettings()" class="w-full py-2 bg-indigo-600 text-white font-bold text-xs rounded-xl">
-        保存して再接続
+
+      <button onclick="saveSettings()" class="w-full py-2 bg-indigo-600 text-white font-bold text-xs rounded-xl hover:bg-indigo-700 transition">
+        保存して閉じる
       </button>
     </div>
   </div>
 
   <script>
-    // 教科リスト
-    const SUBJECTS = [
+    // デフォルト教科リスト
+    const DEFAULT_SUBJECTS = [
       '国語', '現代の国語', '言語文化', '論理国語',
       '数学I', '数学A', '数学II', '数学B', '数学III', '数学C',
       '英語', '英語コミュニケーション', '論理・表現',
@@ -212,6 +234,9 @@
       '歴史総合', '日本史', '世界史', '地理総合', '公共', '倫理', '政治・経済',
       '情報I', '保健体育', '音楽', '美術', '家庭科', 'その他'
     ];
+
+    // 教科リストの読み込み（LocalStorageに保存されていればそれを優先）
+    let subjects = JSON.parse(localStorage.getItem('cfg_subjects')) || DEFAULT_SUBJECTS;
 
     let SUPABASE_URL = localStorage.getItem('cfg_sp_url') || '';
     let SUPABASE_ANON_KEY = localStorage.getItem('cfg_sp_key') || '';
@@ -243,13 +268,63 @@
       initSupabase();
     });
 
+    // ドロップダウンの教科選択肢を更新
     function initDropdowns() {
-      const opts = SUBJECTS.map(s => `<option value="${s}">${s}</option>`).join('');
+      const opts = subjects.map(s => `<option value="${s}">${s}</option>`).join('');
       document.getElementById('formSubject').innerHTML = opts;
       document.getElementById('formSubjectFrom').innerHTML = opts;
       document.getElementById('formSubjectTo').innerHTML = opts;
     }
 
+    // --- 教科管理機能 ---
+    function renderSubjectManager() {
+      const container = document.getElementById('subjectTagList');
+      container.innerHTML = '';
+
+      subjects.forEach((sub, idx) => {
+        const tag = document.createElement('span');
+        tag.className = 'inline-flex items-center space-x-1 px-2 py-1 bg-white border border-slate-200 rounded-lg text-xs text-slate-700 shadow-2xs';
+        tag.innerHTML = `
+          <span>${escapeHtml(sub)}</span>
+          <button type="button" onclick="removeSubject(${idx})" class="text-slate-400 hover:text-red-500 ml-1">
+            <i class="fa-solid fa-xmark text-[10px]"></i>
+          </button>
+        `;
+        container.appendChild(tag);
+      });
+    }
+
+    function addSubject() {
+      const input = document.getElementById('newSubjectInput');
+      const name = input.value.trim();
+      if (!name) return;
+
+      if (subjects.includes(name)) {
+        alert('その教科はすでに追加されています');
+        return;
+      }
+
+      subjects.push(name);
+      localStorage.setItem('cfg_subjects', JSON.stringify(subjects));
+      input.value = '';
+      
+      renderSubjectManager();
+      initDropdowns();
+    }
+
+    function removeSubject(index) {
+      if (subjects.length <= 1) {
+        alert('教科は最低1つ必要です');
+        return;
+      }
+      subjects.splice(index, 1);
+      localStorage.setItem('cfg_subjects', JSON.stringify(subjects));
+      
+      renderSubjectManager();
+      initDropdowns();
+    }
+
+    // --- Supabase 連携 ---
     function initSupabase() {
       const banner = document.getElementById('statusBanner');
       const text = document.getElementById('statusText');
@@ -389,8 +464,8 @@
         document.getElementById('formSubject').value = item.subject;
       } else if (item.subject.includes('→')) {
         const parts = item.subject.split('→').map(s => s.trim());
-        document.getElementById('formSubjectFrom').value = parts[0] || SUBJECTS[0];
-        document.getElementById('formSubjectTo').value = parts[1] || SUBJECTS[0];
+        document.getElementById('formSubjectFrom').value = parts[0] || subjects[0];
+        document.getElementById('formSubjectTo').value = parts[1] || subjects[0];
       }
 
       document.getElementById('formModal').classList.remove('hidden');
@@ -590,6 +665,7 @@
     function openSettings() {
       document.getElementById('cfgUrl').value = SUPABASE_URL;
       document.getElementById('cfgKey').value = SUPABASE_ANON_KEY;
+      renderSubjectManager();
       document.getElementById('settingsModal').classList.remove('hidden');
     }
 
